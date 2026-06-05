@@ -19,8 +19,8 @@ const GENRE_PRESETS: { zh: string; value: string }[] = [
 
 export default function InputForm({ onSubmit, disabled, defaults }: Props) {
   const [genre, setGenre] = useState(defaults?.genre ?? "家装改造逆袭")
-  const [episodes, setEpisodes] = useState(defaults?.episodes ?? 12)
-  const [episodeSecs, setEpisodeSecs] = useState(defaults?.episodeSecs ?? 90)
+  const [episodes, setEpisodes] = useState(defaults?.episodes ?? 5)
+  const [episodeSecs, setEpisodeSecs] = useState(defaults?.episodeSecs ?? 30)
   const [brandFocus, setBrandFocus] = useState(
     defaults?.brandFocus ?? "客厅沙发、卧室套装"
   )

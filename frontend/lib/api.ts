@@ -1,11 +1,27 @@
 import { Brief, SSEvent } from "./types"
+import { getToken } from "./auth"
 
 const API = process.env.NEXT_PUBLIC_API ?? "http://localhost:8080"
 
+// Thrown when the backend rejects the session token; the UI should re-login.
+export class UnauthorizedError extends Error {
+  constructor() {
+    super("UNAUTHORIZED")
+    this.name = "UnauthorizedError"
+  }
+}
+
 export async function generate(brief: Brief, onEvent: (e: SSEvent) => void): Promise<void> {
+  const token = getToken()
   const res = await fetch(`${API}/api/generate`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(brief),
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(brief),
   })
+  if (res.status === 401) throw new UnauthorizedError()
   if (!res.body) throw new Error("no stream")
   const reader = res.body.getReader()
   const dec = new TextDecoder()

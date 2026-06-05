@@ -1,13 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Brief, Plan, SSEvent } from "@/lib/types"
-import { generate } from "@/lib/api"
+import { generate, UnauthorizedError } from "@/lib/api"
+import { getToken, clearToken } from "@/lib/auth"
 import InputForm from "@/components/InputForm"
 import StageTimeline from "@/components/StageTimeline"
 import PlanView from "@/components/PlanView"
 import ExportBar from "@/components/ExportBar"
 import Stepper, { Step } from "@/components/Stepper"
+import LoginForm from "@/components/LoginForm"
 
 const STAGES = [
   "concept",
@@ -22,12 +24,28 @@ const STAGES = [
 const API = process.env.NEXT_PUBLIC_API ?? "http://localhost:8080"
 
 export default function Home() {
+  const [ready, setReady] = useState(false)
+  const [authed, setAuthed] = useState(false)
   const [step, setStep] = useState<Step>(1)
   const [events, setEvents] = useState<SSEvent[]>([])
   const [plan, setPlan] = useState<Plan | null>(null)
   const [running, setRunning] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [lastBrief, setLastBrief] = useState<Brief | undefined>(undefined)
+
+  useEffect(() => {
+    setAuthed(Boolean(getToken()))
+    setReady(true)
+  }, [])
+
+  function logout() {
+    clearToken()
+    setAuthed(false)
+    setStep(1)
+    setEvents([])
+    setPlan(null)
+    setFailed(null)
+  }
 
   async function run(brief: Brief) {
     setLastBrief(brief)
@@ -45,6 +63,11 @@ export default function Home() {
         }
       })
     } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        clearToken()
+        setAuthed(false)
+        return
+      }
       setFailed(
         err instanceof Error
           ? `${err.message} — 后端是否在 ${API} 运行?`
@@ -61,6 +84,10 @@ export default function Home() {
     setPlan(null)
     setFailed(null)
   }
+
+  // Avoid SSR/first-paint flash before we know auth state.
+  if (!ready) return null
+  if (!authed) return <LoginForm onAuthed={() => setAuthed(true)} />
 
   return (
     <div className="relative min-h-screen">
@@ -90,11 +117,19 @@ export default function Home() {
               从立意到通告单,由多 Agent 流水线自动产出。
             </p>
           </div>
-          <div className="hidden text-right sm:block">
-            <span className="label-tech">画幅</span>
-            <div className="ml-auto mt-1 flex h-20 w-12 items-center justify-center rounded-md border border-bone-500/25 bg-ink-800">
-              <span className="font-mono text-[10px] text-bone-500">9:16</span>
+          <div className="flex items-center gap-4 sm:flex-col sm:items-end">
+            <div className="hidden text-right sm:block">
+              <span className="label-tech">画幅</span>
+              <div className="ml-auto mt-1 flex h-20 w-12 items-center justify-center rounded-md border border-bone-500/25 bg-ink-800">
+                <span className="font-mono text-[10px] text-bone-500">9:16</span>
+              </div>
             </div>
+            <button
+              onClick={logout}
+              className="rounded-lg border border-bone-500/25 bg-ink-800 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-bone-300 transition hover:border-bone-500/50 hover:text-bone-100"
+            >
+              退出登录
+            </button>
           </div>
         </header>
 
