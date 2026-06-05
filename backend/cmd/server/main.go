@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/ashley/drama-workbench/internal/agent"
+	"github.com/ashley/drama-workbench/internal/auth"
 	"github.com/ashley/drama-workbench/internal/llm"
 	"github.com/ashley/drama-workbench/internal/model"
 )
@@ -19,7 +20,11 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(corsMiddleware)
 
-	r.Post("/api/generate", handleGenerate)
+	a := auth.New()
+	log.Printf("auth enabled (user=%s)", a.User())
+
+	r.Post("/api/login", a.LoginHandler)
+	r.With(a.Middleware).Post("/api/generate", handleGenerate)
 	r.Get("/api/health", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
 
 	port := os.Getenv("PORT")
@@ -63,7 +68,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return

@@ -2,9 +2,9 @@ package model
 
 // Brief is the normalized user input that drives the whole pipeline.
 type Brief struct {
-	Genre       string `json:"genre"`       // e.g. "home makeover revenge"
-	Episodes    int    `json:"episodes"`    // default 12
-	EpisodeSecs int    `json:"episodeSecs"` // default 90
+	Genre       string `json:"genre"`       // e.g. "家装改造逆袭"
+	Episodes    int    `json:"episodes"`    // default 5
+	EpisodeSecs int    `json:"episodeSecs"` // default 30
 	Market      string `json:"market"`      // fixed "US" for MVP
 	Language    string `json:"language"`    // fixed "English" for MVP
 	BrandFocus  string `json:"brandFocus"`  // e.g. "living room sofas, bedroom sets"
@@ -13,10 +13,10 @@ type Brief struct {
 
 func (b *Brief) ApplyDefaults() {
 	if b.Episodes <= 0 {
-		b.Episodes = 12
+		b.Episodes = 5
 	}
 	if b.EpisodeSecs <= 0 {
-		b.EpisodeSecs = 90
+		b.EpisodeSecs = 30
 	}
 	if b.Market == "" {
 		b.Market = "中国"

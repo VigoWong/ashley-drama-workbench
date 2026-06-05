@@ -1,3 +1,10 @@
 .playwright-mcp/
 _review/
 *.log
+
+# Local dev runners / env files / credentials holding secrets — never commit
+backend/run-dev.sh
+backend/vertex-sa.json
+**/.env
+**/.env.local
+**/*.env.local

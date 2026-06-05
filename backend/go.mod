@@ -2,4 +2,9 @@ module github.com/ashley/drama-workbench
 
 go 1.23.12
 
-require github.com/go-chi/chi/v5 v5.3.0
+require (
+	github.com/go-chi/chi/v5 v5.3.0
+	golang.org/x/oauth2 v0.30.0
+)
+
+require cloud.google.com/go/compute/metadata v0.3.0 // indirect

@@ -9,19 +9,81 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
+// defaultGeminiBase is Google's native Generative Language API host. It can be
+// overridden (e.g. to an OpenAI-compatible proxy that also speaks the native
+// generateContent shape, like yunwu.ai) via GEMINI_BASE_URL.
+const defaultGeminiBase = "https://generativelanguage.googleapis.com"
+
+// Gemini calls Google's native generateContent API. It runs in one of two
+// modes depending on how it was constructed:
+//   - AI Studio (NewGemini): API key in the query string, against baseURL.
+//   - Vertex AI (NewVertex): OAuth2 bearer token from a service account,
+//     against the regional aiplatform.googleapis.com endpoint.
+//
+// The request/response wire format is identical in both modes; only the URL
+// and auth differ.
 type Gemini struct {
-	apiKey string
 	model  string
 	client *http.Client
+
+	// AI Studio mode
+	apiKey  string
+	baseURL string
+
+	// Vertex AI mode (active when tokenSource != nil)
+	tokenSource oauth2.TokenSource
+	project     string
+	location    string
 }
 
-func NewGemini(apiKey, model string) *Gemini {
+func NewGemini(apiKey, model, baseURL string) *Gemini {
 	if model == "" {
 		model = "gemini-2.0-flash"
 	}
-	return &Gemini{apiKey: apiKey, model: model, client: &http.Client{Timeout: 90 * time.Second}}
+	if baseURL == "" {
+		baseURL = defaultGeminiBase
+	}
+	baseURL = strings.TrimRight(baseURL, "/")
+	return &Gemini{apiKey: apiKey, model: model, baseURL: baseURL, client: &http.Client{Timeout: 90 * time.Second}}
+}
+
+// NewVertex builds a provider that authenticates to Vertex AI with a Google
+// service-account JSON and talks to the regional endpoint for project/location.
+// The token source refreshes access tokens automatically.
+func NewVertex(saJSON []byte, project, location, model string) (*Gemini, error) {
+	if model == "" {
+		model = "gemini-2.5-flash"
+	}
+	if location == "" {
+		location = "us-central1"
+	}
+	cfg, err := google.JWTConfigFromJSON(saJSON, "https://www.googleapis.com/auth/cloud-platform")
+	if err != nil {
+		return nil, fmt.Errorf("vertex credentials: %w", err)
+	}
+	if project == "" {
+		// Fall back to the project the service account itself belongs to.
+		var sa struct {
+			ProjectID string `json:"project_id"`
+		}
+		_ = json.Unmarshal(saJSON, &sa)
+		project = sa.ProjectID
+	}
+	if project == "" {
+		return nil, fmt.Errorf("vertex: project id missing (set VERTEX_PROJECT or use a key with project_id)")
+	}
+	return &Gemini{
+		model:       model,
+		project:     project,
+		location:    location,
+		tokenSource: cfg.TokenSource(context.Background()),
+		client:      &http.Client{Timeout: 90 * time.Second},
+	}, nil
 }
 
 type geminiReq struct {
@@ -29,14 +91,19 @@ type geminiReq struct {
 	GenerationConfig genConfig       `json:"generationConfig"`
 }
 type geminiContent struct {
+	Role  string       `json:"role,omitempty"`
 	Parts []geminiPart `json:"parts"`
 }
 type geminiPart struct {
 	Text string `json:"text"`
 }
 type genConfig struct {
-	ResponseMimeType string  `json:"responseMimeType"`
-	Temperature      float64 `json:"temperature"`
+	ResponseMimeType string          `json:"responseMimeType"`
+	Temperature      float64         `json:"temperature"`
+	ThinkingConfig   *thinkingConfig `json:"thinkingConfig,omitempty"`
+}
+type thinkingConfig struct {
+	ThinkingBudget int `json:"thinkingBudget"`
 }
 type geminiResp struct {
 	Candidates []struct {
@@ -67,13 +134,33 @@ func (g *Gemini) GenerateJSON(ctx context.Context, stage, prompt string, _ map[s
 }
 
 func (g *Gemini) once(ctx context.Context, prompt string) (string, error) {
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", g.model, g.apiKey)
+	cfg := genConfig{ResponseMimeType: "application/json", Temperature: 0.9}
+	// Gemini 2.5 models think by default and leak the reasoning into the text
+	// part, which breaks strict-JSON parsing. Disable it so we get clean JSON.
+	if strings.Contains(g.model, "2.5") {
+		cfg.ThinkingConfig = &thinkingConfig{ThinkingBudget: 0}
+	}
 	body, _ := json.Marshal(geminiReq{
-		Contents:         []geminiContent{{Parts: []geminiPart{{Text: prompt}}}},
-		GenerationConfig: genConfig{ResponseMimeType: "application/json", Temperature: 0.9},
+		Contents:         []geminiContent{{Role: "user", Parts: []geminiPart{{Text: prompt}}}},
+		GenerationConfig: cfg,
 	})
+
+	var url string
+	if g.tokenSource != nil {
+		url = fmt.Sprintf("https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:generateContent",
+			g.location, g.project, g.location, g.model)
+	} else {
+		url = fmt.Sprintf("%s/v1beta/models/%s:generateContent?key=%s", g.baseURL, g.model, g.apiKey)
+	}
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
+	if g.tokenSource != nil {
+		tok, err := g.tokenSource.Token()
+		if err != nil {
+			return "", fmt.Errorf("vertex token: %w", err)
+		}
+		req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
+	}
 	resp, err := g.client.Do(req)
 	if err != nil {
 		return "", err
