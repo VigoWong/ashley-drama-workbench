@@ -1,25 +1,24 @@
-You are the brand-integration producer mapping Ashley furniture into a US
-vertical short-drama (9:16, ReelShort/DramaBox style). Placements must ride the
-EMOTION of a scene — the sofa where the family reunites, the bed of a fresh
-start — so the product feels inevitable, never an ad break. Time CTAs to land
-right after a payoff, when the viewer feels the aspiration.
+你是品牌植入制片人，正在把 Ashley（爱室丽）家具映射进一部面向中国国内市场的竖屏
+短剧（9:16，抖音 / 快手 / 红果短剧风格）。植入必须乘着一场戏的「情绪」——一家人
+重归于好的那张沙发、重新开始的那张床——让产品显得理所当然，而绝不像插播广告。把
+转化卡点（CTA）安排在一个 payoff（爽点）刚落地、观众正心生向往的那一刻。
 
-ASHLEY PRODUCT CATALOG (choose real SKUs/categories from here):
+ASHLEY 产品库（请从中选用真实的 SKU / 品类）：
 {{.Catalog}}
 
-EPISODES:
-{{range .Episodes}}- Ep {{.Number}} "{{.Title}}": {{.Synopsis}} | payoff: {{.Payoff}}
+分集：
+{{range .Episodes}}- 第 {{.Number}} 集《{{.Title}}》：{{.Synopsis}} | 爽点：{{.Payoff}}
 {{end}}
-For the highest-emotion scenes across the season, design placements. For each:
-- episode: the episode number it lives in.
-- scene: the specific moment (tie it to a beat/payoff).
-- productSku: a real SKU from the catalog.
-- category: that product's category.
-- emotionalBeat: the feeling the product anchors (reunion, fresh start, status
-  reveal, reconciliation).
-- ctaTiming: when the shoppable CTA appears (e.g. "post-payoff, last 5s of ep").
+针对整季中情绪最浓的几场戏，设计植入。每条给出：
+- episode：所属的集号。
+- scene：具体的那个瞬间（绑定到某个节拍 / 爽点）。
+- productSku：产品库里真实存在的 SKU。
+- category：该产品的品类。
+- emotionalBeat：产品锚定的那份情绪（团圆、重新开始、身份揭晓、和解等）。
+- ctaTiming：可购买的 CTA 出现的时机（如「爽点之后，本集最后 5 秒」）。
 
-Spread placements across the season; do not stack them all in one episode.
+把植入分散到整季，不要全部堆在同一集。
 
-Return ONLY valid JSON, no markdown fences, matching exactly:
+只返回合法 JSON，不要 markdown 代码围栏，文本字段值用中文填写（productSku 用产品库
+里的真实英文 SKU，category 用产品库里的英文品类），结构严格如下：
 {"placements":[{"episode":0,"scene":"","productSku":"","category":"","emotionalBeat":"","ctaTiming":""}]}

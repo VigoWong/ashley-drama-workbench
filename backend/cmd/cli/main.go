@@ -24,7 +24,7 @@ func main() {
 
 	provider, mock := llm.FromEnv()
 	if mock {
-		fmt.Fprintln(os.Stderr, "[demo mode: no GEMINI_API_KEY, using mock provider]")
+		fmt.Fprintln(os.Stderr, "[演示模式：未配置 GEMINI_API_KEY，使用 mock provider]")
 	}
 
 	emit := func(e model.Event) {

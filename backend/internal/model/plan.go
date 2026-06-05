@@ -19,10 +19,10 @@ func (b *Brief) ApplyDefaults() {
 		b.EpisodeSecs = 90
 	}
 	if b.Market == "" {
-		b.Market = "US"
+		b.Market = "中国"
 	}
 	if b.Language == "" {
-		b.Language = "English"
+		b.Language = "中文"
 	}
 }
 

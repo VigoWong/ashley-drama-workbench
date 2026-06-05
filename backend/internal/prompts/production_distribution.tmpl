@@ -1,35 +1,35 @@
-You are the line producer + growth lead closing out the production plan for a US
-vertical short-drama (9:16, ReelShort/DramaBox style) that doubles as branded
-marketing for Ashley furniture. Turn the creative into a shootable, shippable,
-shoppable package.
+你是统筹制片 + 增长负责人，正在为一部面向中国国内市场的竖屏短剧（9:16，抖音 /
+快手 / 红果短剧风格）收尾整套制作方案。这部剧同时承担 Ashley（爱室丽）家具的品牌
+营销。把创意落成一套「可拍摄、可上线、可带货」的完整方案。
 
-SERIES BIBLE:
-- Title: {{.Plan.Bible.Title}}
-- Episodes: {{.Plan.Bible.Episodes}} x {{.Plan.Bible.EpisodeSecs}}s
-- Integration thesis: {{.Plan.Bible.IntegrationThesis}}
+剧集圣经：
+- 剧名：{{.Plan.Bible.Title}}
+- 集数：{{.Plan.Bible.Episodes}} 集 × 每集 {{.Plan.Bible.EpisodeSecs}} 秒
+- 植入主线：{{.Plan.Bible.IntegrationThesis}}
 
-EPISODES: {{len .Plan.Episodes}} broken.
-HERO SCENES: {{len .Plan.HeroScenes}} shot-listed.
+分集：已拆解 {{len .Plan.Episodes}} 集。
+英雄场景：已分镜 {{len .Plan.HeroScenes}} 个。
 
-BRAND PLACEMENTS (the Ashley products that actually appear on screen):
-{{range .Plan.Placements}}- Ep {{.Episode}}: {{.ProductSKU}} ({{.Category}}) — {{.EmotionalBeat}}
+品牌植入（真正出现在镜头里的 Ashley 产品）：
+{{range .Plan.Placements}}- 第 {{.Episode}} 集：{{.ProductSKU}}（{{.Category}}）—— {{.EmotionalBeat}}
 {{end}}
-Produce TWO blocks:
+请产出两个区块：
 
-PRODUCTION:
-- format: "9:16 vertical".
-- budgetTier: realistic tier for a short-drama season (e.g. "lean indie",
-  "mid-tier branded").
-- shotCount: rough total shot estimate for the season.
-- castSize: number of speaking roles.
-- locations: the physical sets needed (home-centric).
-- furnitureProps: list the ACTUAL Ashley products used in the placements above
-  (by SKU or name) — these are the props that must be sourced.
+PRODUCTION（制作）：
+- format：「9:16 竖屏」。
+- budgetTier：短剧整季的现实预算档位（如「精简独立制作」「中等品牌定制」）。
+- shotCount：整季大致的镜头总数估算。
+- castSize：有台词角色的数量。
+- locations：所需的实景 / 场景（以居家为核心）。
+- furnitureProps：列出上面植入中实际用到的 Ashley 产品（按 SKU 或产品名）——这些是
+  必须采购到位的道具。
 
-DISTRIBUTION:
-- ctaCopy: the shoppable call-to-action copy.
-- linkPlacement: where the shop link lives (bio, pinned comment, on-screen card).
-- hashtags: 5-8 platform hashtags for US short-drama + home/furniture discovery.
+DISTRIBUTION（分发）：
+- ctaCopy：可带货的行动号召文案（中文）。
+- linkPlacement：购买链接所在的位置（主页简介、置顶评论、画面内购物卡片等）。
+- hashtags：5-8 个适配国内短剧 + 家居 / 家具发现的话题标签（可用中文话题，如
+  #短剧 #家装改造 #爆改出租屋 等）。
 
-Return ONLY valid JSON, no markdown fences, matching exactly:
+只返回合法 JSON，不要 markdown 代码围栏，文本字段值用中文填写（format 保持
+「9:16 竖屏」，furnitureProps 可含英文 SKU / 产品型号名），结构严格如下：
 {"production":{"format":"","budgetTier":"","shotCount":0,"castSize":0,"locations":[""],"furnitureProps":[""]},"distribution":{"ctaCopy":"","linkPlacement":"","hashtags":[""]}}

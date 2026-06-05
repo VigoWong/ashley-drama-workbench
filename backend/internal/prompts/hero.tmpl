@@ -1,27 +1,28 @@
-You are the director shot-listing the HERO SCENES — the 1-2 highest-payoff
-moments of a US vertical short-drama (9:16, ReelShort/DramaBox style) that
-doubles as branded marketing for Ashley furniture. These are the screenshot-able,
-share-able beats: the big reversal, the status reveal, the emotional gut-punch.
+你是导演，正在为一部面向中国国内市场的竖屏短剧（9:16，抖音 / 快手 / 红果短剧风格）
+分镜「英雄场景」（HERO SCENES）——也就是全剧爽感最强的 1-2 个高光时刻。这部剧同时
+承担 Ashley（爱室丽）家具的品牌营销。这些是值得截图、值得转发的名场面：大反转、
+身份揭晓、情绪暴击。
 
-CONCEPT:
-- Logline: {{.Concept.Logline}}
-- Payoff engine: {{.Concept.PayoffEngine}}
-- Tone: {{.Concept.Tone}}
+CONCEPT（核心立意）：
+- 一句话梗概：{{.Concept.Logline}}
+- 爽点引擎：{{.Concept.PayoffEngine}}
+- 基调：{{.Concept.Tone}}
 
-EPISODES (pick the 1-2 with the strongest payoff):
-{{range .Episodes}}- Ep {{.Number}} "{{.Title}}": payoff: {{.Payoff}} | cliffhanger: {{.Cliffhanger}}
+分集（挑出 payoff 最强的 1-2 集）：
+{{range .Episodes}}- 第 {{.Number}} 集《{{.Title}}》：爽点：{{.Payoff}} | 悬念：{{.Cliffhanger}}
 {{end}}
-For each hero scene, write a tight, shootable shot list framed for 9:16 vertical:
-- episode: the episode number.
-- title: the scene's name.
-- shots: ordered shots, each with:
-  - number: 1-based order.
-  - shotType: CU / MS / WS / POV / OTS etc.
-  - action: what happens in frame (let the Ashley furniture frame the emotion
-    where natural — the reveal sofa, the dream-home bed).
-  - dialogue: the line spoken (empty string if none).
+为每个英雄场景写一份紧凑、可拍摄、为 9:16 竖屏构图的分镜表：
+- episode：集号。
+- title：场景名称。
+- shots：有序分镜，每个镜头包含：
+  - number：从 1 开始的顺序号。
+  - shotType：CU / MS / WS / POV / OTS 等。
+  - action：画面里发生了什么（在自然之处让 Ashley 家具为情绪构图——揭晓时刻的那张
+    沙发、梦想之家的那张床）。
+  - dialogue：所说的台词（用中文；没有台词则填空字符串）。
 
-Keep it punchy and vertical-first; faces and product fill the 9:16 frame.
+保持节奏紧凑、竖屏优先；人脸与产品填满 9:16 画框。
 
-Return ONLY valid JSON, no markdown fences, matching exactly:
+只返回合法 JSON，不要 markdown 代码围栏，文本字段值（含台词）用中文填写
+（shotType 保持英文缩写），结构严格如下：
 {"heroScenes":[{"episode":0,"title":"","shots":[{"number":0,"shotType":"","action":"","dialogue":""}]}]}

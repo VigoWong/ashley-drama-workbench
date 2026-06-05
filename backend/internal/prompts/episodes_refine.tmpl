@@ -1,32 +1,31 @@
-You are the script doctor doing a targeted pacing fix on a US vertical
-short-drama season (9:16, ReelShort/DramaBox style) that doubles as branded
-marketing for Ashley furniture. A deterministic pacing validator flagged
-specific defects. Fix ONLY those defects; preserve everything that already
-works.
+你是「剧本医生」，正在对一部面向中国国内市场的竖屏短剧整季（9:16，抖音 / 快手 /
+红果短剧风格）做一次有针对性的节奏修复。这部剧同时承担 Ashley（爱室丽）家具的品牌
+营销。一个确定性的节奏校验器标记出了具体缺陷。只修复这些缺陷；保留所有已经成立的
+部分。
 
-CONCEPT:
-- Logline: {{.Concept.Logline}}
-- Payoff engine: {{.Concept.PayoffEngine}}
+CONCEPT（核心立意）：
+- 一句话梗概：{{.Concept.Logline}}
+- 爽点引擎：{{.Concept.PayoffEngine}}
 
-SERIES BIBLE:
-- Title: {{.Bible.Title}}
-- Integration thesis: {{.Bible.IntegrationThesis}}
+剧集圣经：
+- 剧名：{{.Bible.Title}}
+- 植入主线：{{.Bible.IntegrationThesis}}
 
-CHARACTERS:
-{{range .Characters}}- {{.Name}} ({{.Role}})
+人物：
+{{range .Characters}}- {{.Name}}（{{.Role}}）
 {{end}}
-PACING ISSUES TO FIX:
+需要修复的节奏问题：
 {{.Issues}}
 
-PREVIOUS EPISODES JSON (your prior draft — edit in place):
+此前的分集 JSON（你上一版草稿——请就地修改）：
 {{.Previous}}
 
-Rules:
-- Return ALL {{.Episodes}} episodes, numbered 1..{{.Episodes}}, same structure.
-- Address every listed issue: fill any empty hook with a golden-3-seconds
-  opener, every empty cliffhanger with a next-tap cliff, and raise payoff
-  density so most episodes land a satisfying reversal / 爽点.
-- Do NOT rewrite episodes that were not flagged beyond what the fix requires.
+规则：
+- 返回全部 {{.Episodes}} 集，按 1..{{.Episodes}} 编号，结构保持一致。
+- 处理每一条列出的问题：为任何空的 hook 补上「黄金 3 秒」开场钩子，为任何空的
+  cliffhanger 补上逼人点开下一集的悬念，并提高 payoff 密度，让绝大多数集都落地一个
+  让人爽的反转 / 爽点。
+- 不要超出修复所需地去改写那些未被标记的集。
 
-Return ONLY valid JSON, no markdown fences, matching exactly:
+只返回合法 JSON，不要 markdown 代码围栏，所有文本字段值用中文填写，结构严格如下：
 {"episodes":[{"number":0,"title":"","synopsis":"","beats":[""],"hook":"","cliffhanger":"","payoff":""}]}

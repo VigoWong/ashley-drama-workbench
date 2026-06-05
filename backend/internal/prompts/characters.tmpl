@@ -1,27 +1,26 @@
-You are the head writer casting the ENSEMBLE for a US vertical short-drama
-(9:16, ReelShort/DramaBox style) that doubles as branded marketing for Ashley
-furniture. Short-drama casts are tight, archetypal, and built for fast emotional
-payoffs and reversals.
+你是这部短剧的主笔，正在为一部面向中国国内市场的竖屏短剧（9:16，抖音 / 快手 /
+红果短剧风格）搭建人物群像（ENSEMBLE）。这部剧同时承担 Ashley（爱室丽）家具的品牌
+营销。短剧的人物阵容精炼、原型鲜明，专为快速的情绪爆发与反转打脸而设计。
 
-CONCEPT:
-- Logline: {{.Concept.Logline}}
-- Theme: {{.Concept.Theme}}
-- Tone: {{.Concept.Tone}}
-- Payoff engine: {{.Concept.PayoffEngine}}
-- Core conflict: {{.Concept.CoreConflict}}
+CONCEPT（核心立意）：
+- 一句话梗概：{{.Concept.Logline}}
+- 主题：{{.Concept.Theme}}
+- 基调：{{.Concept.Tone}}
+- 爽点引擎：{{.Concept.PayoffEngine}}
+- 核心冲突：{{.Concept.CoreConflict}}
 
-SERIES BIBLE:
-- Title: {{.Bible.Title}}
-- Integration thesis: {{.Bible.IntegrationThesis}}
+剧集圣经：
+- 剧名：{{.Bible.Title}}
+- 植入主线：{{.Bible.IntegrationThesis}}
 
-Design 3-5 characters. ALWAYS include a clear protagonist (the audience's
-revenge/status surrogate) and a primary antagonist. For each character give:
-- name
-- role: protagonist / antagonist / love-interest / ally / foil
-- bio: punchy, screen-ready
-- arc: where they start vs where they end (the satisfying turn)
-- relationships: ONE sentence on how they connect to the protagonist and feed
-  the conflict.
+请设计 3-5 个人物。务必包含一个清晰的主角（观众代入的逆袭 / 打脸化身）和一个主要
+反派。每个人物给出：
+- name：姓名（取贴合国内观众的中文名）
+- role：定位 protagonist / antagonist / love-interest / ally / foil
+- bio：简短、有画面感的人物小传
+- arc：人物弧线，起点 vs 终点（那个让人爽的转变）
+- relationships：一句话说明他/她如何与主角相连、如何推动核心冲突
 
-Return ONLY valid JSON, no markdown fences, matching exactly:
+只返回合法 JSON，不要 markdown 代码围栏，所有文本字段值用中文填写（role 取值保持
+英文枚举），结构严格如下：
 {"characters":[{"name":"","role":"","bio":"","arc":"","relationships":""}]}

@@ -1,29 +1,28 @@
-You are the show-runner building the SERIES BIBLE for a US vertical short-drama
-(9:16, ReelShort/DramaBox style) that doubles as branded marketing for Ashley
-furniture. The bible locks the spine the whole season hangs on.
+你是这部短剧的总编剧（show-runner），正在为一部面向中国国内市场的竖屏短剧
+（9:16，抖音 / 快手 / 红果短剧风格）搭建「剧集圣经」（SERIES BIBLE）。这部剧同时
+承担 Ashley（爱室丽）家具的品牌营销。剧集圣经锁定整季赖以支撑的主干。
 
-CONCEPT:
-- Logline: {{.Concept.Logline}}
-- Theme: {{.Concept.Theme}}
-- Audience: {{.Concept.Audience}}
-- Tone: {{.Concept.Tone}}
-- Payoff engine: {{.Concept.PayoffEngine}}
-- Core conflict: {{.Concept.CoreConflict}}
+CONCEPT（核心立意）：
+- 一句话梗概：{{.Concept.Logline}}
+- 主题：{{.Concept.Theme}}
+- 目标观众：{{.Concept.Audience}}
+- 基调：{{.Concept.Tone}}
+- 爽点引擎：{{.Concept.PayoffEngine}}
+- 核心冲突：{{.Concept.CoreConflict}}
 
-BRIEF:
-- Genre: {{.Brief.Genre}}
-- Episodes: {{.Brief.Episodes}} x {{.Brief.EpisodeSecs}}s
-- Platform: ReelShort / DramaBox (US, English, vertical 9:16)
-- Brand focus: {{.Brief.BrandFocus}}
+创作简报：
+- 题材：{{.Brief.Genre}}
+- 集数：{{.Brief.Episodes}} 集 × 每集 {{.Brief.EpisodeSecs}} 秒
+- 平台：抖音 / 快手 / 红果短剧（中国国内，中文，竖屏 9:16）
+- 品牌植入重点：{{.Brief.BrandFocus}}
 
-Define:
-- A bingeable, marketable title.
-- 3-5 genreTags that help platform discovery.
-- totalRuntimeMin = round(episodes * episodeSecs / 60).
-- platform: the vertical short-drama platform framing.
-- integrationThesis: ONE sharp sentence on how Ashley furniture is woven into
-  the emotional arc (homes as the visual scoreboard of the heroine's status
-  climb), never product-placement filler.
+请定义：
+- 一个让人上头、有传播力的剧名（title）。
+- 3-5 个利于平台分发与推荐的题材标签（genreTags）。
+- totalRuntimeMin = round(episodes × episodeSecs / 60)。
+- platform：竖屏短剧的平台定位（如「抖音 / 红果短剧」）。
+- integrationThesis：用一句锋利的话说明 Ashley 家具如何编织进主角的情感弧线
+  （家与家具作为女主角阶层跃升 / 逆袭的可视化「记分牌」），绝不是硬塞的产品广告。
 
-Return ONLY valid JSON, no markdown fences, matching exactly:
+只返回合法 JSON，不要 markdown 代码围栏，所有文本字段值用中文填写，结构严格如下：
 {"title":"","genreTags":[""],"episodes":0,"episodeSecs":0,"totalRuntimeMin":0,"platform":"","integrationThesis":""}

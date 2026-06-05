@@ -1,33 +1,31 @@
-You are the writers' room breaking the FULL SEASON of a US vertical short-drama
-(9:16, ReelShort/DramaBox style) that doubles as branded marketing for Ashley
-furniture. Every episode is {{.Bible.EpisodeSecs}}s — there is zero room for
-filler. Each episode must hit hard and end on a hook that forces the next tap.
+你是一间「编剧工作室」，正在拆解一部面向中国国内市场的竖屏短剧（9:16，抖音 / 快手 /
+红果短剧风格）的整季剧本。这部剧同时承担 Ashley（爱室丽）家具的品牌营销。每集只有
+{{.Bible.EpisodeSecs}} 秒——没有任何注水的空间。每集都必须打得狠，并以一个逼着观众
+点开下一集的钩子收尾。
 
-CONCEPT:
-- Logline: {{.Concept.Logline}}
-- Tone: {{.Concept.Tone}}
-- Payoff engine: {{.Concept.PayoffEngine}}
-- Core conflict: {{.Concept.CoreConflict}}
+CONCEPT（核心立意）：
+- 一句话梗概：{{.Concept.Logline}}
+- 基调：{{.Concept.Tone}}
+- 爽点引擎：{{.Concept.PayoffEngine}}
+- 核心冲突：{{.Concept.CoreConflict}}
 
-SERIES BIBLE:
-- Title: {{.Bible.Title}}
-- Integration thesis: {{.Bible.IntegrationThesis}}
+剧集圣经：
+- 剧名：{{.Bible.Title}}
+- 植入主线：{{.Bible.IntegrationThesis}}
 
-CHARACTERS:
-{{range .Characters}}- {{.Name}} ({{.Role}}): {{.Bio}} | arc: {{.Arc}}
+人物：
+{{range .Characters}}- {{.Name}}（{{.Role}}）：{{.Bio}} | 弧线：{{.Arc}}
 {{end}}
-Break ALL {{.Episodes}} episodes, numbered 1..{{.Episodes}} in order. Short-drama
-pacing rules (HARD requirements):
-- hook: a golden-3-seconds opener for EVERY episode — a question, threat, or
-  reversal in the first beat. NEVER empty.
-- cliffhanger: EVERY episode ends on a cliff that demands the next tap. NEVER
-  empty.
-- payoff: the satisfying reversal / 爽点 for that episode. The vast majority of
-  episodes MUST land a payoff; pull the payoff engine forward, do not stall.
-- beats: 3-5 terse beats driving the episode.
-- synopsis: 1-2 tight sentences.
-- Escalate stakes across the season and let the home/furniture visually track
-  the heroine's rising status (subtle, earned — not an ad).
+请拆解全部 {{.Episodes}} 集，按 1..{{.Episodes}} 顺序编号。短剧节奏规则（硬性要求）：
+- hook：每一集都要有「黄金 3 秒」开场钩子——在第一个节拍里抛出一个疑问、威胁或
+  反转。绝对不能为空。
+- cliffhanger：每一集都要以一个逼人点开下一集的悬念收尾。绝对不能为空。
+- payoff：本集那个让人爽的反转 / 爽点。绝大多数集都必须落地一个 payoff；把爽点
+  引擎往前拉，不要拖沓。
+- beats：3-5 个简短有力、推动本集的节拍。
+- synopsis：1-2 句精炼概要。
+- 让赌注随整季层层升级，并让家 / 家具在视觉上同步映射女主角不断上升的地位
+  （含蓄、有铺垫——不是广告）。
 
-Return ONLY valid JSON, no markdown fences, matching exactly:
+只返回合法 JSON，不要 markdown 代码围栏，所有文本字段值用中文填写，结构严格如下：
 {"episodes":[{"number":0,"title":"","synopsis":"","beats":[""],"hook":"","cliffhanger":"","payoff":""}]}
