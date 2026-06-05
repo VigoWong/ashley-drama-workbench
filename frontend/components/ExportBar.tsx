@@ -42,7 +42,7 @@ export default function ExportBar({ plan }: Props) {
     <div className="panel sticky top-4 z-30 flex flex-wrap items-center justify-between gap-3 rounded-xl px-5 py-3">
       <div className="flex items-center gap-3">
         <span className="flex h-2 w-2 animate-pulse-glow rounded-full bg-ember-400" />
-        <span className="label-tech">Plan locked · ready to ship</span>
+        <span className="label-tech">方案已锁定 · 可交付</span>
         {flash && (
           <span className="font-mono text-[10px] text-signal-go">↓ {flash}</span>
         )}
@@ -51,7 +51,7 @@ export default function ExportBar({ plan }: Props) {
         <button
           onClick={() => {
             download(`${base}.json`, JSON.stringify(plan, null, 2), "application/json")
-            ping("JSON exported")
+            ping("已导出 JSON")
           }}
           className="rounded-lg border border-bone-500/25 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
         >
@@ -60,7 +60,7 @@ export default function ExportBar({ plan }: Props) {
         <button
           onClick={() => {
             download(`${base}.md`, planToMarkdown(plan), "text/markdown")
-            ping("Markdown exported")
+            ping("已导出 Markdown")
           }}
           className="rounded-lg bg-ember-500 px-4 py-2 font-mono text-xs uppercase tracking-wider text-ink-900 transition hover:bg-ember-400"
         >

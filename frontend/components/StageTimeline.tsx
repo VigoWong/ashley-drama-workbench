@@ -11,23 +11,23 @@ interface Props {
 type Status = "pending" | "running" | "done"
 
 const STAGE_LABELS: Record<string, string> = {
-  concept: "Concept",
-  bible: "Series Bible",
-  characters: "Characters",
-  episodes: "Episode Breakdown",
-  placements: "Brand Placements",
-  hero: "Hero Scenes",
-  production_distribution: "Production & Distribution",
+  concept: "立意",
+  bible: "剧集圣经",
+  characters: "人物",
+  episodes: "分集大纲",
+  placements: "品牌植入",
+  hero: "英雄场景",
+  production_distribution: "制作与分发",
 }
 
 const STAGE_SUB: Record<string, string> = {
-  concept: "logline · payoff engine",
-  bible: "title · platform · integration",
-  characters: "cast · arcs · relationships",
-  episodes: "hooks · cliffhangers · pacing gate",
-  placements: "SKU → scene → CTA",
-  hero: "shot lists",
-  production_distribution: "budget · format · CTA copy",
+  concept: "logline · 爽点引擎",
+  bible: "标题 · 平台 · 植入策略",
+  characters: "卡司 · 弧光 · 关系",
+  episodes: "钩子 · 悬念 · 节奏校验",
+  placements: "SKU → 场景 → CTA",
+  hero: "分镜表",
+  production_distribution: "预算 · 格式 · CTA 文案",
 }
 
 function deriveStatus(stage: string, events: SSEvent[]): Status {
@@ -63,13 +63,13 @@ export default function StageTimeline({ stages, events }: Props) {
     <section className="panel rounded-2xl p-6 sm:p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <span className="label-tech">Pipeline · Dailies</span>
+          <span className="label-tech">流水线 · 样片</span>
           <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">
-            Agent stages
+            Agent 阶段
           </h2>
         </div>
         <div className="text-right">
-          <span className="label-tech">Reels in the can</span>
+          <span className="label-tech">已完成</span>
           <p className="font-mono text-lg text-ember-400">
             {doneCount.toString().padStart(2, "0")}
             <span className="text-bone-500">/{stages.length.toString().padStart(2, "0")}</span>
@@ -121,7 +121,7 @@ export default function StageTimeline({ stages, events }: Props) {
                     {STAGE_LABELS[stage] ?? stage}
                   </h3>
                   <span className="label-tech whitespace-nowrap">
-                    {status === "running" ? "rolling…" : status === "done" ? "cut ✓" : "standby"}
+                    {status === "running" ? "生成中…" : status === "done" ? "完成 ✓" : "待命"}
                   </span>
                 </div>
                 <p className="mt-0.5 font-mono text-[10px] text-bone-500">
@@ -143,7 +143,7 @@ export default function StageTimeline({ stages, events }: Props) {
                       onClick={() => setOpen((o) => ({ ...o, [stage]: !o[stage] }))}
                       className="font-mono text-[10px] uppercase tracking-wider text-ember-400/80 transition hover:text-ember-300"
                     >
-                      {isOpen ? "▾ hide raw output" : "▸ inspect raw output"}
+                      {isOpen ? "▾ 收起原始输出" : "▸ 查看原始输出"}
                     </button>
                     {isOpen && (
                       <pre className="mt-2 max-h-72 overflow-auto rounded-lg border border-bone-500/10 bg-ink-900/80 p-3 font-mono text-[11px] leading-relaxed text-bone-300">
@@ -162,7 +162,7 @@ export default function StageTimeline({ stages, events }: Props) {
         <div className="mt-4 rounded-lg border border-signal-stop/40 bg-signal-stop/10 p-4">
           {errors.map((e, i) => (
             <p key={i} className="font-mono text-xs text-signal-stop">
-              <span className="font-semibold">✕ {e.stage ?? "pipeline"}:</span> {e.message}
+              <span className="font-semibold">✕ {e.stage ?? "流水线"}:</span> {e.message}
             </p>
           ))}
         </div>

@@ -19,9 +19,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ashley · Short-Drama Workbench",
+  title: "Ashley · 短剧生产工作台",
   description:
-    "An AI production workbench that turns a brief into a branded vertical short-drama plan for Ashley furniture.",
+    "一个 AI 生产工作台:把一句需求转化为面向美国市场的 Ashley 家具品牌竖屏短剧制作方案。",
 };
 
 export default function RootLayout({
@@ -31,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="zh-CN"
       className={`${fraunces.variable} ${geist.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full">{children}</body>

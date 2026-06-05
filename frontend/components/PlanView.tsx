@@ -48,9 +48,9 @@ function Masthead({ plan }: Props) {
         className="pointer-events-none absolute -right-10 -top-16 h-64 w-64 rounded-full"
         style={{ background: "radial-gradient(circle, rgba(228,132,47,0.22), transparent 70%)" }}
       />
-      <span className="label-tech">The Series · 9:16 Vertical</span>
+      <span className="label-tech">剧集 · 9:16 竖屏</span>
       <h1 className="mt-2 max-w-3xl font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl">
-        {bible.title || "Untitled Series"}
+        {bible.title || "未命名剧集"}
       </h1>
       <p className="mt-4 max-w-2xl font-display text-lg italic leading-relaxed text-bone-300">
         &ldquo;{concept.logline}&rdquo;
@@ -66,10 +66,10 @@ function Masthead({ plan }: Props) {
         ))}
       </div>
       <dl className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-bone-500/10 bg-bone-500/10 sm:grid-cols-4">
-        <Stat label="Episodes" value={String(bible.episodes || brief.episodes)} />
-        <Stat label="Secs / Ep" value={`${bible.episodeSecs || brief.episodeSecs}s`} />
-        <Stat label="Platform" value={bible.platform || "ReelShort"} />
-        <Stat label="Market" value={brief.market || "US · English"} />
+        <Stat label="集数" value={String(bible.episodes || brief.episodes)} />
+        <Stat label="单集秒数" value={`${bible.episodeSecs || brief.episodeSecs}s`} />
+        <Stat label="平台" value={bible.platform || "ReelShort"} />
+        <Stat label="市场" value={brief.market || "US · English"} />
       </dl>
     </header>
   )
@@ -89,22 +89,22 @@ function Stat({ label, value }: { label: string; value: string }) {
 function ConceptSection({ plan }: Props) {
   const c = plan.concept
   const rows: [string, string][] = [
-    ["Theme", c.theme],
-    ["Audience", c.audience],
-    ["Tone", c.tone],
-    ["Core conflict", c.coreConflict],
+    ["主题", c.theme],
+    ["受众", c.audience],
+    ["基调", c.tone],
+    ["核心冲突", c.coreConflict],
   ]
   return (
     <section>
-      <SectionHead no="01" kicker="Creative North Star" title="Concept" />
+      <SectionHead no="01" kicker="创意北极星" title="立意" />
       <div className="grid gap-5 lg:grid-cols-3">
         <div className="panel rounded-2xl p-6 lg:col-span-1">
-          <span className="label-tech">Payoff Engine · 爽点</span>
+          <span className="label-tech">爽点引擎 · Payoff Engine</span>
           <p className="mt-2 font-display text-xl leading-snug text-ember-200">
             {c.payoffEngine}
           </p>
           <p className="mt-3 font-sans text-sm text-bone-300">
-            The repeatable satisfaction mechanism that keeps viewers binging.
+            驱动观众持续追看的可复用爽感机制。
           </p>
         </div>
         <dl className="grid gap-3 lg:col-span-2 sm:grid-cols-2">
@@ -126,7 +126,7 @@ function BibleSection({ plan }: Props) {
   const b = plan.bible
   return (
     <section>
-      <SectionHead no="02" kicker="Format Contract" title="Series Bible" />
+      <SectionHead no="02" kicker="形态契约" title="剧集圣经" />
       <div className="panel rounded-2xl p-6">
         <p className="font-sans text-base leading-relaxed text-bone-100">
           {b.integrationThesis}
@@ -156,7 +156,7 @@ const ROLE_TINT: Record<string, string> = {
 function CharactersSection({ plan }: Props) {
   return (
     <section>
-      <SectionHead no="03" kicker="The Cast" title="Characters" />
+      <SectionHead no="03" kicker="卡司阵容" title="人物" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {plan.characters.map((c) => (
           <article key={c.name} className="panel group flex flex-col rounded-2xl p-5">
@@ -194,7 +194,7 @@ function EpisodesSection({ plan }: Props) {
   const [openEp, setOpenEp] = useState<number | null>(plan.episodes[0]?.number ?? null)
   return (
     <section>
-      <SectionHead no="04" kicker="Beat Sheet" title="Episodes" />
+      <SectionHead no="04" kicker="节拍表" title="分集" />
       <div className="space-y-2">
         {plan.episodes.map((e) => {
           const isOpen = openEp === e.number
@@ -230,13 +230,13 @@ function EpisodesSection({ plan }: Props) {
                     <p className="font-sans text-sm leading-relaxed text-bone-200">{e.synopsis}</p>
                   )}
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <Beat tone="open" label="Hook · golden 3s" value={e.hook} />
-                    <Beat tone="payoff" label="Payoff · 爽点" value={e.payoff} />
-                    <Beat tone="cliff" label="Cliffhanger" value={e.cliffhanger} />
+                    <Beat tone="open" label="钩子 · 黄金3秒" value={e.hook} />
+                    <Beat tone="payoff" label="爽点 · Payoff" value={e.payoff} />
+                    <Beat tone="cliff" label="结尾悬念" value={e.cliffhanger} />
                   </div>
                   {e.beats?.length > 0 && (
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="label-tech">Beats</span>
+                      <span className="label-tech">节拍</span>
                       {e.beats.map((b, i) => (
                         <span key={i} className="rounded bg-ink-700 px-2 py-0.5 font-mono text-[10px] text-bone-300">
                           {b}
@@ -274,13 +274,13 @@ function Beat({ tone, label, value }: { tone: "open" | "payoff" | "cliff"; label
 function PlacementsSection({ plan }: Props) {
   return (
     <section>
-      <SectionHead no="05" kicker="Branded Integration" title="Ashley Placements" />
+      <SectionHead no="05" kicker="品牌植入" title="Ashley 植入" />
       <div className="panel overflow-hidden rounded-2xl">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="border-b border-bone-500/15">
-                {["Ep", "Product", "Scene", "Emotional Beat", "CTA Timing"].map((h) => (
+                {["集", "产品", "场景", "情绪节点", "CTA 时机"].map((h) => (
                   <th key={h} className="label-tech px-4 py-3 font-normal">
                     {h}
                   </th>
@@ -318,7 +318,7 @@ function PlacementsSection({ plan }: Props) {
 function HeroSection({ plan }: Props) {
   return (
     <section>
-      <SectionHead no="06" kicker="Showcase Shot Lists" title="Hero Scenes" />
+      <SectionHead no="06" kicker="样板分镜" title="英雄场景" />
       <div className="grid gap-5 lg:grid-cols-2">
         {plan.heroScenes.map((h, i) => (
           <article key={i} className="panel overflow-hidden rounded-2xl">
@@ -361,16 +361,16 @@ function ProductionSection({ plan }: Props) {
   const pr = plan.production
   return (
     <section>
-      <SectionHead no="07" kicker="On The Floor" title="Production" />
+      <SectionHead no="07" kicker="拍摄现场" title="制作" />
       <div className="grid gap-5 lg:grid-cols-3">
         <dl className="grid grid-cols-2 gap-3 lg:col-span-1">
-          <Stat2 label="Format" value={pr.format} />
-          <Stat2 label="Budget" value={pr.budgetTier} />
-          <Stat2 label="Shots" value={String(pr.shotCount || "—")} />
-          <Stat2 label="Cast" value={String(pr.castSize || "—")} />
+          <Stat2 label="格式" value={pr.format} />
+          <Stat2 label="预算档" value={pr.budgetTier} />
+          <Stat2 label="镜头数" value={String(pr.shotCount || "—")} />
+          <Stat2 label="卡司数" value={String(pr.castSize || "—")} />
         </dl>
         <div className="panel rounded-2xl p-5 lg:col-span-1">
-          <span className="label-tech">Locations</span>
+          <span className="label-tech">场景地点</span>
           <ul className="mt-3 space-y-2">
             {(pr.locations ?? []).map((l) => (
               <li key={l} className="flex items-center gap-2 font-sans text-sm text-bone-100">
@@ -380,7 +380,7 @@ function ProductionSection({ plan }: Props) {
           </ul>
         </div>
         <div className="panel rounded-2xl p-5 lg:col-span-1">
-          <span className="label-tech">Furniture Props · Ashley</span>
+          <span className="label-tech">家具道具 · Ashley</span>
           <ul className="mt-3 space-y-2">
             {(pr.furnitureProps ?? []).map((f) => (
               <li key={f} className="font-sans text-sm text-bone-200">
@@ -409,14 +409,14 @@ function DistributionSection({ plan }: Props) {
   const d = plan.distribution
   return (
     <section>
-      <SectionHead no="08" kicker="Go To Market" title="Distribution" />
+      <SectionHead no="08" kicker="走向市场" title="分发" />
       <div className="panel rounded-2xl p-6">
         <p className="font-display text-2xl leading-snug text-ember-200">
           &ldquo;{d.ctaCopy}&rdquo;
         </p>
         {d.linkPlacement && (
           <p className="mt-3 font-sans text-sm text-bone-300">
-            <span className="label-tech mr-2">Link</span>
+            <span className="label-tech mr-2">挂链</span>
             {d.linkPlacement}
           </p>
         )}

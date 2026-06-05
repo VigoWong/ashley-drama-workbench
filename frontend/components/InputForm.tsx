@@ -6,22 +6,26 @@ import { Brief } from "@/lib/types"
 interface Props {
   onSubmit: (brief: Brief) => void
   disabled?: boolean
+  defaults?: Brief
 }
 
-const GENRE_PRESETS = [
-  "home makeover revenge",
-  "secret-heir renovation",
-  "fresh start after divorce",
-  "family reconciliation",
+// 中文显示标签 + 发送给后端的英文取值(产出仍面向美国市场)
+const GENRE_PRESETS: { zh: string; value: string }[] = [
+  { zh: "家装改造逆袭", value: "home makeover revenge" },
+  { zh: "隐藏富豪翻修", value: "secret-heir renovation" },
+  { zh: "离婚后重启人生", value: "fresh start after divorce" },
+  { zh: "家庭和解", value: "family reconciliation" },
 ]
 
-export default function InputForm({ onSubmit, disabled }: Props) {
-  const [genre, setGenre] = useState("home makeover revenge")
-  const [episodes, setEpisodes] = useState(12)
-  const [episodeSecs, setEpisodeSecs] = useState(90)
-  const [brandFocus, setBrandFocus] = useState("living room sofas, bedroom sets")
+export default function InputForm({ onSubmit, disabled, defaults }: Props) {
+  const [genre, setGenre] = useState(defaults?.genre ?? "home makeover revenge")
+  const [episodes, setEpisodes] = useState(defaults?.episodes ?? 12)
+  const [episodeSecs, setEpisodeSecs] = useState(defaults?.episodeSecs ?? 90)
+  const [brandFocus, setBrandFocus] = useState(
+    defaults?.brandFocus ?? "living room sofas, bedroom sets"
+  )
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     onSubmit({ genre, episodes, episodeSecs, brandFocus })
   }
@@ -46,14 +50,14 @@ export default function InputForm({ onSubmit, disabled }: Props) {
 
       <div className="mb-6 flex items-end justify-between gap-4">
         <div>
-          <span className="label-tech">Production Slate · Scene 01</span>
+          <span className="label-tech">场记板 · Scene 01</span>
           <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-bone-50">
-            Brief the writers&rsquo; room
+            给编剧室下需求
           </h2>
         </div>
         <div className="hidden text-right sm:block">
-          <span className="label-tech">Total runtime</span>
-          <p className="font-mono text-lg text-ember-400">{runtime}m</p>
+          <span className="label-tech">总时长</span>
+          <p className="font-mono text-lg text-ember-400">{runtime} 分钟</p>
         </div>
       </div>
 
@@ -61,7 +65,7 @@ export default function InputForm({ onSubmit, disabled }: Props) {
         {/* Genre */}
         <div className="sm:col-span-7">
           <label htmlFor="genre" className="label-tech mb-2 block">
-            Genre / Trope
+            题材 / 套路
           </label>
           <input
             id="genre"
@@ -70,22 +74,22 @@ export default function InputForm({ onSubmit, disabled }: Props) {
             onChange={(e) => setGenre(e.target.value)}
             disabled={disabled}
             className="w-full rounded-lg border border-bone-500/20 bg-ink-900/60 px-4 py-3 font-sans text-bone-50 outline-none transition focus:border-ember-500/70 focus:ring-2 focus:ring-ember-500/20 disabled:opacity-50"
-            placeholder="e.g. home makeover revenge"
+            placeholder="例如:家装改造逆袭"
           />
           <div className="mt-2 flex flex-wrap gap-1.5">
             {GENRE_PRESETS.map((g) => (
               <button
-                key={g}
+                key={g.value}
                 type="button"
                 disabled={disabled}
-                onClick={() => setGenre(g)}
-                className={`rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition disabled:opacity-50 ${
-                  genre === g
+                onClick={() => setGenre(g.value)}
+                className={`rounded-full border px-2.5 py-1 font-mono text-[10px] tracking-wider transition disabled:opacity-50 ${
+                  genre === g.value
                     ? "border-ember-500/60 bg-ember-500/15 text-ember-200"
                     : "border-bone-500/20 text-bone-500 hover:border-bone-500/40 hover:text-bone-300"
                 }`}
               >
-                {g}
+                {g.zh}
               </button>
             ))}
           </div>
@@ -94,7 +98,7 @@ export default function InputForm({ onSubmit, disabled }: Props) {
         {/* Brand focus */}
         <div className="sm:col-span-5">
           <label htmlFor="brand" className="label-tech mb-2 block">
-            Ashley Brand Focus
+            Ashley 品牌重点
           </label>
           <input
             id="brand"
@@ -103,17 +107,17 @@ export default function InputForm({ onSubmit, disabled }: Props) {
             onChange={(e) => setBrandFocus(e.target.value)}
             disabled={disabled}
             className="w-full rounded-lg border border-bone-500/20 bg-ink-900/60 px-4 py-3 font-sans text-bone-50 outline-none transition focus:border-ember-500/70 focus:ring-2 focus:ring-ember-500/20 disabled:opacity-50"
-            placeholder="living room sofas, bedroom sets"
+            placeholder="客厅沙发、卧室套装"
           />
           <p className="mt-2 font-mono text-[10px] text-bone-500">
-            Drives product placement &amp; furniture props.
+            影响产品植入与家具道具清单。
           </p>
         </div>
 
         {/* Episodes */}
         <div className="sm:col-span-3">
           <label htmlFor="episodes" className="label-tech mb-2 block">
-            Episodes
+            集数
           </label>
           <input
             id="episodes"
@@ -130,7 +134,7 @@ export default function InputForm({ onSubmit, disabled }: Props) {
         {/* Episode seconds */}
         <div className="sm:col-span-3">
           <label htmlFor="secs" className="label-tech mb-2 block">
-            Secs / Ep
+            单集秒数
           </label>
           <input
             id="secs"
@@ -155,12 +159,12 @@ export default function InputForm({ onSubmit, disabled }: Props) {
               {disabled ? (
                 <>
                   <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink-900/40 border-t-ink-900" />
-                  Rolling…
+                  生成中…
                 </>
               ) : (
                 <>
                   <span className="font-mono text-base leading-none">▸</span>
-                  Action — Generate Plan
+                  Action · 生成方案
                 </>
               )}
             </span>
