@@ -1,26 +1,120 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Ashley Short-Drama Workbench — "Production Slate" design system
+   A warm, cinematic dark studio: ink + ember + bone, editorial
+   serif display, technical mono for timecode/spec data.
+   ============================================================ */
+
+@theme {
+  /* Studio surfaces — deep warm charcoals, never pure black */
+  --color-ink-900: #14110f;
+  --color-ink-800: #1b1714;
+  --color-ink-700: #241e1a;
+  --color-ink-600: #2f2823;
+  --color-ink-500: #3d352e;
+
+  /* Bone — warm off-white text on dark */
+  --color-bone-50: #f7f1e7;
+  --color-bone-100: #efe6d6;
+  --color-bone-300: #cdbfa9;
+  --color-bone-500: #998a74;
+
+  /* Ember — the brand-warm signal accent (film glow / golden hour) */
+  --color-ember-200: #f9c98a;
+  --color-ember-300: #f4b56e;
+  --color-ember-400: #ee9d52;
+  --color-ember-500: #e4842f;
+  --color-ember-600: #c66a1c;
+
+  /* Status hues kept muted to live inside the warm world */
+  --color-signal-go: #8fb98a;
+  --color-signal-stop: #d9694f;
+
+  --font-display: var(--font-display), "Times New Roman", serif;
+  --font-sans: var(--font-sans), system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, monospace;
+
+  --animate-shimmer: shimmer 2.2s linear infinite;
+  --animate-rise: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-sweep: sweep 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pulse-glow: pulseGlow 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes sweep {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: var(--color-ink-900);
+  --foreground: var(--color-bone-50);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-ink-900);
+  color: var(--color-bone-50);
+  font-family: var(--font-sans);
+  /* Layered atmosphere: a warm radial glow + faint film grain */
+  background-image:
+    radial-gradient(120% 80% at 12% -10%, rgba(228, 132, 47, 0.14), transparent 55%),
+    radial-gradient(90% 70% at 100% 0%, rgba(198, 106, 28, 0.08), transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Film-grain overlay rendered once, fixed over the whole viewport */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Utility: tiny uppercase technical label */
+@utility label-tech {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-bone-500);
+}
+
+/* Utility: hairline studio panel */
+@utility panel {
+  background: linear-gradient(180deg, rgba(36, 30, 26, 0.9), rgba(20, 17, 15, 0.92));
+  border: 1px solid rgba(205, 191, 169, 0.1);
+  backdrop-filter: blur(2px);
+}
+
+/* Scrollbar in the warm world */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-500) transparent;
+}
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-ink-500);
+  border-radius: 99px;
+  border: 2px solid var(--color-ink-900);
+}
+
+/* Native form controls inherit the dark theme */
+input, select, textarea {
+  color-scheme: dark;
 }
