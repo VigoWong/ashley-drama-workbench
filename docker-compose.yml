@@ -1,0 +1,34 @@
+# 短剧生产工作台 —— 仅负责数据库持久化。
+# 后端/前端不入 compose:后端需要本机的 Vertex SA 文件,容器化较复杂。
+# 启动:docker compose up -d ;等 postgres healthy 后,后端通过
+#   DATABASE_URL=postgres://drama:drama@localhost:5432/drama?sslmode=disable 连接。
+services:
+  postgres:
+    image: postgres:16
+    container_name: drama-postgres
+    environment:
+      POSTGRES_USER: drama
+      POSTGRES_PASSWORD: drama
+      POSTGRES_DB: drama
+    ports:
+      - "5432:5432"
+    volumes:
+      - drama_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U drama -d drama"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # 可选:轻量数据库浏览器,访问 http://localhost:8082 查看 plans 表。
+  adminer:
+    image: adminer:4
+    container_name: drama-adminer
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  drama_pg_data:

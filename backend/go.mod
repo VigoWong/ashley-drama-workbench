@@ -4,6 +4,7 @@ go 1.23.12
 
 require (
 	github.com/go-chi/chi/v5 v5.3.0
+	github.com/lib/pq v1.12.3
 	golang.org/x/oauth2 v0.30.0
 )
 

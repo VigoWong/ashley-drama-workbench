@@ -11,3 +11,5 @@ export interface Distribution { ctaCopy: string; linkPlacement: string; hashtags
 export interface Plan { brief: Brief; concept: Concept; bible: SeriesBible; characters: Character[]; episodes: Episode[]; placements: Placement[]; heroScenes: HeroScene[]; production: Production; distribution: Distribution }
 export type EventType = "stage_start" | "stage_done" | "error" | "complete"
 export interface SSEvent { type: EventType; stage?: string; index?: number; total?: number; message?: string; payload?: unknown; plan?: Plan }
+export interface HistorySummary { id: string; title: string; genre: string; episodes: number; createdAt: string }
+export interface HistoryRecord { id: string; createdAt: string; brief: Brief; plan: Plan }

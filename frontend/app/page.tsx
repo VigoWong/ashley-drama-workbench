@@ -10,6 +10,9 @@ import PlanView from "@/components/PlanView"
 import ExportBar from "@/components/ExportBar"
 import Stepper, { Step } from "@/components/Stepper"
 import LoginForm from "@/components/LoginForm"
+import HistoryView from "@/components/HistoryView"
+
+type View = "workbench" | "history"
 
 const STAGES = [
   "concept",
@@ -26,6 +29,7 @@ const API = process.env.NEXT_PUBLIC_API ?? "http://localhost:8080"
 export default function Home() {
   const [ready, setReady] = useState(false)
   const [authed, setAuthed] = useState(false)
+  const [view, setView] = useState<View>("workbench")
   const [step, setStep] = useState<Step>(1)
   const [events, setEvents] = useState<SSEvent[]>([])
   const [plan, setPlan] = useState<Plan | null>(null)
@@ -41,10 +45,17 @@ export default function Home() {
   function logout() {
     clearToken()
     setAuthed(false)
+    setView("workbench")
     setStep(1)
     setEvents([])
     setPlan(null)
     setFailed(null)
+  }
+
+  function handleUnauthorized() {
+    clearToken()
+    setAuthed(false)
+    setView("workbench")
   }
 
   async function run(brief: Brief) {
@@ -124,15 +135,30 @@ export default function Home() {
                 <span className="font-mono text-[10px] text-bone-500">9:16</span>
               </div>
             </div>
-            <button
-              onClick={logout}
-              className="rounded-lg border border-bone-500/25 bg-ink-800 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-bone-300 transition hover:border-bone-500/50 hover:text-bone-100"
-            >
-              退出登录
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setView("history")}
+                className="rounded-lg border border-bone-500/25 bg-ink-800 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-bone-300 transition hover:border-ember-400/50 hover:text-ember-400"
+              >
+                历史
+              </button>
+              <button
+                onClick={logout}
+                className="rounded-lg border border-bone-500/25 bg-ink-800 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-bone-300 transition hover:border-bone-500/50 hover:text-bone-100"
+              >
+                退出登录
+              </button>
+            </div>
           </div>
         </header>
 
+        {view === "history" ? (
+          <HistoryView
+            onBack={() => setView("workbench")}
+            onUnauthorized={handleUnauthorized}
+          />
+        ) : (
+          <>
         {/* ---- Stepper ---- */}
         <Stepper current={step} onStep={(s) => s === 1 && restart()} />
 
@@ -176,6 +202,8 @@ export default function Home() {
             <ExportBar plan={plan} />
             <PlanView plan={plan} />
           </div>
+        )}
+          </>
         )}
       </main>
 

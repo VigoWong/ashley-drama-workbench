@@ -13,7 +13,13 @@ import (
 	"github.com/ashley/drama-workbench/internal/auth"
 	"github.com/ashley/drama-workbench/internal/llm"
 	"github.com/ashley/drama-workbench/internal/model"
+	"github.com/ashley/drama-workbench/internal/store"
 )
+
+// db is the optional persistence layer. It stays nil when DATABASE_URL is
+// unset or the connection fails, in which case the server degrades gracefully:
+// generation still works and the history endpoints return empty/404.
+var db *store.Store
 
 func main() {
 	r := chi.NewRouter()
@@ -23,8 +29,25 @@ func main() {
 	a := auth.New()
 	log.Printf("auth enabled (user=%s)", a.User())
 
+	if dsn := os.Getenv("DATABASE_URL"); dsn != "" {
+		s, err := store.Open(dsn)
+		if err != nil {
+			log.Printf("history: persistence disabled (open failed: %v)", err)
+		} else if err := s.Migrate(); err != nil {
+			log.Printf("history: persistence disabled (migrate failed: %v)", err)
+		} else {
+			db = s
+			log.Printf("history: persistence enabled")
+		}
+	}
+	if db == nil {
+		log.Printf("history: persistence disabled (DATABASE_URL unset or unavailable)")
+	}
+
 	r.Post("/api/login", a.LoginHandler)
 	r.With(a.Middleware).Post("/api/generate", handleGenerate)
+	r.With(a.Middleware).Get("/api/history", handleHistoryList)
+	r.With(a.Middleware).Get("/api/history/{id}", handleHistoryGet)
 	r.Get("/api/health", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
 
 	port := os.Getenv("PORT")
@@ -59,9 +82,59 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 		flusher.Flush()
 	}
 	o := agent.New(provider, emit)
-	if _, err := o.Run(r.Context(), brief); err != nil {
+	plan, err := o.Run(r.Context(), brief)
+	if err != nil {
 		log.Printf("pipeline error: %v", err)
+		return
 	}
+	// Persist asynchronously to the client: the plan has already streamed out,
+	// so a storage failure is logged but never surfaces to the user.
+	if db != nil && plan != nil {
+		if id, err := db.Save(brief, plan); err != nil {
+			log.Printf("history: save failed: %v", err)
+		} else {
+			log.Printf("history: saved plan %s", id)
+		}
+	}
+}
+
+func handleHistoryList(w http.ResponseWriter, _ *http.Request) {
+	if db == nil {
+		writeJSON(w, http.StatusOK, []store.Summary{})
+		return
+	}
+	list, err := db.List()
+	if err != nil {
+		log.Printf("history: list failed: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, list)
+}
+
+func handleHistoryGet(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	id := chi.URLParam(r, "id")
+	rec, err := db.Get(id)
+	if err != nil {
+		log.Printf("history: get failed: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if rec == nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	writeJSON(w, http.StatusOK, rec)
+}
+
+func writeJSON(w http.ResponseWriter, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(body)
 }
 
 func corsMiddleware(next http.Handler) http.Handler {
