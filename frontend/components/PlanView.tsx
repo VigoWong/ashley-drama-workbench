@@ -68,8 +68,8 @@ function Masthead({ plan }: Props) {
       <dl className="mt-7 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-bone-500/10 bg-bone-500/10 sm:grid-cols-4">
         <Stat label="集数" value={String(bible.episodes || brief.episodes)} />
         <Stat label="单集秒数" value={`${bible.episodeSecs || brief.episodeSecs}s`} />
-        <Stat label="平台" value={bible.platform || "ReelShort"} />
-        <Stat label="市场" value={brief.market || "US · English"} />
+        <Stat label="平台" value={bible.platform || "抖音 / 红果短剧"} />
+        <Stat label="市场" value={brief.market || "中国 · 中文"} />
       </dl>
     </header>
   )

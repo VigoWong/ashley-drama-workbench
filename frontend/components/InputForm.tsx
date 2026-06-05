@@ -9,20 +9,20 @@ interface Props {
   defaults?: Brief
 }
 
-// 中文显示标签 + 发送给后端的英文取值(产出仍面向美国市场)
+// 国内市场中文题材预设(直接作为发往后端的题材输入)
 const GENRE_PRESETS: { zh: string; value: string }[] = [
-  { zh: "家装改造逆袭", value: "home makeover revenge" },
-  { zh: "隐藏富豪翻修", value: "secret-heir renovation" },
-  { zh: "离婚后重启人生", value: "fresh start after divorce" },
-  { zh: "家庭和解", value: "family reconciliation" },
+  { zh: "家装改造逆袭", value: "家装改造逆袭" },
+  { zh: "重生之打造梦想之家", value: "重生之打造梦想之家" },
+  { zh: "离婚后爆改出租屋", value: "离婚后爆改出租屋" },
+  { zh: "婆媳和解之家", value: "婆媳和解之家" },
 ]
 
 export default function InputForm({ onSubmit, disabled, defaults }: Props) {
-  const [genre, setGenre] = useState(defaults?.genre ?? "home makeover revenge")
+  const [genre, setGenre] = useState(defaults?.genre ?? "家装改造逆袭")
   const [episodes, setEpisodes] = useState(defaults?.episodes ?? 12)
   const [episodeSecs, setEpisodeSecs] = useState(defaults?.episodeSecs ?? 90)
   const [brandFocus, setBrandFocus] = useState(
-    defaults?.brandFocus ?? "living room sofas, bedroom sets"
+    defaults?.brandFocus ?? "客厅沙发、卧室套装"
   )
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
