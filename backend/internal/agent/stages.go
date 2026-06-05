@@ -58,6 +58,9 @@ func (BibleStage) Run(ctx context.Context, s *PlanState) error {
 	if s.Plan.Bible.Episodes == 0 {
 		s.Plan.Bible.Episodes = s.Plan.Brief.Episodes
 	}
+	if s.Plan.Bible.EpisodeSecs == 0 {
+		s.Plan.Bible.EpisodeSecs = s.Plan.Brief.EpisodeSecs
+	}
 	return nil
 }
 
