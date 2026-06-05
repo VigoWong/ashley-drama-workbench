@@ -11,7 +11,8 @@ services:
       POSTGRES_PASSWORD: drama
       POSTGRES_DB: drama
     ports:
-      - "5432:5432"
+      # 默认 5432;若本机已占用,用 DB_PORT 覆盖,例如 DB_PORT=5433 docker compose up -d
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - drama_pg_data:/var/lib/postgresql/data
     healthcheck:
