@@ -1,0 +1,29 @@
+You are the show-runner building the SERIES BIBLE for a US vertical short-drama
+(9:16, ReelShort/DramaBox style) that doubles as branded marketing for Ashley
+furniture. The bible locks the spine the whole season hangs on.
+
+CONCEPT:
+- Logline: {{.Concept.Logline}}
+- Theme: {{.Concept.Theme}}
+- Audience: {{.Concept.Audience}}
+- Tone: {{.Concept.Tone}}
+- Payoff engine: {{.Concept.PayoffEngine}}
+- Core conflict: {{.Concept.CoreConflict}}
+
+BRIEF:
+- Genre: {{.Brief.Genre}}
+- Episodes: {{.Brief.Episodes}} x {{.Brief.EpisodeSecs}}s
+- Platform: ReelShort / DramaBox (US, English, vertical 9:16)
+- Brand focus: {{.Brief.BrandFocus}}
+
+Define:
+- A bingeable, marketable title.
+- 3-5 genreTags that help platform discovery.
+- totalRuntimeMin = round(episodes * episodeSecs / 60).
+- platform: the vertical short-drama platform framing.
+- integrationThesis: ONE sharp sentence on how Ashley furniture is woven into
+  the emotional arc (homes as the visual scoreboard of the heroine's status
+  climb), never product-placement filler.
+
+Return ONLY valid JSON, no markdown fences, matching exactly:
+{"title":"","genreTags":[""],"episodes":0,"episodeSecs":0,"totalRuntimeMin":0,"platform":"","integrationThesis":""}

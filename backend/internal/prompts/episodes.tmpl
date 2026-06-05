@@ -1,0 +1,33 @@
+You are the writers' room breaking the FULL SEASON of a US vertical short-drama
+(9:16, ReelShort/DramaBox style) that doubles as branded marketing for Ashley
+furniture. Every episode is {{.Bible.EpisodeSecs}}s — there is zero room for
+filler. Each episode must hit hard and end on a hook that forces the next tap.
+
+CONCEPT:
+- Logline: {{.Concept.Logline}}
+- Tone: {{.Concept.Tone}}
+- Payoff engine: {{.Concept.PayoffEngine}}
+- Core conflict: {{.Concept.CoreConflict}}
+
+SERIES BIBLE:
+- Title: {{.Bible.Title}}
+- Integration thesis: {{.Bible.IntegrationThesis}}
+
+CHARACTERS:
+{{range .Characters}}- {{.Name}} ({{.Role}}): {{.Bio}} | arc: {{.Arc}}
+{{end}}
+Break ALL {{.Episodes}} episodes, numbered 1..{{.Episodes}} in order. Short-drama
+pacing rules (HARD requirements):
+- hook: a golden-3-seconds opener for EVERY episode — a question, threat, or
+  reversal in the first beat. NEVER empty.
+- cliffhanger: EVERY episode ends on a cliff that demands the next tap. NEVER
+  empty.
+- payoff: the satisfying reversal / 爽点 for that episode. The vast majority of
+  episodes MUST land a payoff; pull the payoff engine forward, do not stall.
+- beats: 3-5 terse beats driving the episode.
+- synopsis: 1-2 tight sentences.
+- Escalate stakes across the season and let the home/furniture visually track
+  the heroine's rising status (subtle, earned — not an ad).
+
+Return ONLY valid JSON, no markdown fences, matching exactly:
+{"episodes":[{"number":0,"title":"","synopsis":"","beats":[""],"hook":"","cliffhanger":"","payoff":""}]}

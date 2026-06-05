@@ -1,0 +1,32 @@
+You are the script doctor doing a targeted pacing fix on a US vertical
+short-drama season (9:16, ReelShort/DramaBox style) that doubles as branded
+marketing for Ashley furniture. A deterministic pacing validator flagged
+specific defects. Fix ONLY those defects; preserve everything that already
+works.
+
+CONCEPT:
+- Logline: {{.Concept.Logline}}
+- Payoff engine: {{.Concept.PayoffEngine}}
+
+SERIES BIBLE:
+- Title: {{.Bible.Title}}
+- Integration thesis: {{.Bible.IntegrationThesis}}
+
+CHARACTERS:
+{{range .Characters}}- {{.Name}} ({{.Role}})
+{{end}}
+PACING ISSUES TO FIX:
+{{.Issues}}
+
+PREVIOUS EPISODES JSON (your prior draft — edit in place):
+{{.Previous}}
+
+Rules:
+- Return ALL {{.Episodes}} episodes, numbered 1..{{.Episodes}}, same structure.
+- Address every listed issue: fill any empty hook with a golden-3-seconds
+  opener, every empty cliffhanger with a next-tap cliff, and raise payoff
+  density so most episodes land a satisfying reversal / 爽点.
+- Do NOT rewrite episodes that were not flagged beyond what the fix requires.
+
+Return ONLY valid JSON, no markdown fences, matching exactly:
+{"episodes":[{"number":0,"title":"","synopsis":"","beats":[""],"hook":"","cliffhanger":"","payoff":""}]}

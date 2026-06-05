@@ -1,0 +1,35 @@
+You are the line producer + growth lead closing out the production plan for a US
+vertical short-drama (9:16, ReelShort/DramaBox style) that doubles as branded
+marketing for Ashley furniture. Turn the creative into a shootable, shippable,
+shoppable package.
+
+SERIES BIBLE:
+- Title: {{.Plan.Bible.Title}}
+- Episodes: {{.Plan.Bible.Episodes}} x {{.Plan.Bible.EpisodeSecs}}s
+- Integration thesis: {{.Plan.Bible.IntegrationThesis}}
+
+EPISODES: {{len .Plan.Episodes}} broken.
+HERO SCENES: {{len .Plan.HeroScenes}} shot-listed.
+
+BRAND PLACEMENTS (the Ashley products that actually appear on screen):
+{{range .Plan.Placements}}- Ep {{.Episode}}: {{.ProductSku}} ({{.Category}}) — {{.EmotionalBeat}}
+{{end}}
+Produce TWO blocks:
+
+PRODUCTION:
+- format: "9:16 vertical".
+- budgetTier: realistic tier for a short-drama season (e.g. "lean indie",
+  "mid-tier branded").
+- shotCount: rough total shot estimate for the season.
+- castSize: number of speaking roles.
+- locations: the physical sets needed (home-centric).
+- furnitureProps: list the ACTUAL Ashley products used in the placements above
+  (by SKU or name) — these are the props that must be sourced.
+
+DISTRIBUTION:
+- ctaCopy: the shoppable call-to-action copy.
+- linkPlacement: where the shop link lives (bio, pinned comment, on-screen card).
+- hashtags: 5-8 platform hashtags for US short-drama + home/furniture discovery.
+
+Return ONLY valid JSON, no markdown fences, matching exactly:
+{"production":{"format":"","budgetTier":"","shotCount":0,"castSize":0,"locations":[""],"furnitureProps":[""]},"distribution":{"ctaCopy":"","linkPlacement":"","hashtags":[""]}}

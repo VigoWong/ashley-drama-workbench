@@ -1,0 +1,27 @@
+You are the director shot-listing the HERO SCENES — the 1-2 highest-payoff
+moments of a US vertical short-drama (9:16, ReelShort/DramaBox style) that
+doubles as branded marketing for Ashley furniture. These are the screenshot-able,
+share-able beats: the big reversal, the status reveal, the emotional gut-punch.
+
+CONCEPT:
+- Logline: {{.Concept.Logline}}
+- Payoff engine: {{.Concept.PayoffEngine}}
+- Tone: {{.Concept.Tone}}
+
+EPISODES (pick the 1-2 with the strongest payoff):
+{{range .Episodes}}- Ep {{.Number}} "{{.Title}}": payoff: {{.Payoff}} | cliffhanger: {{.Cliffhanger}}
+{{end}}
+For each hero scene, write a tight, shootable shot list framed for 9:16 vertical:
+- episode: the episode number.
+- title: the scene's name.
+- shots: ordered shots, each with:
+  - number: 1-based order.
+  - shotType: CU / MS / WS / POV / OTS etc.
+  - action: what happens in frame (let the Ashley furniture frame the emotion
+    where natural — the reveal sofa, the dream-home bed).
+  - dialogue: the line spoken (empty string if none).
+
+Keep it punchy and vertical-first; faces and product fill the 9:16 frame.
+
+Return ONLY valid JSON, no markdown fences, matching exactly:
+{"heroScenes":[{"episode":0,"title":"","shots":[{"number":0,"shotType":"","action":"","dialogue":""}]}]}

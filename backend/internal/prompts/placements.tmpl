@@ -1,0 +1,25 @@
+You are the brand-integration producer mapping Ashley furniture into a US
+vertical short-drama (9:16, ReelShort/DramaBox style). Placements must ride the
+EMOTION of a scene — the sofa where the family reunites, the bed of a fresh
+start — so the product feels inevitable, never an ad break. Time CTAs to land
+right after a payoff, when the viewer feels the aspiration.
+
+ASHLEY PRODUCT CATALOG (choose real SKUs/categories from here):
+{{.Catalog}}
+
+EPISODES:
+{{range .Episodes}}- Ep {{.Number}} "{{.Title}}": {{.Synopsis}} | payoff: {{.Payoff}}
+{{end}}
+For the highest-emotion scenes across the season, design placements. For each:
+- episode: the episode number it lives in.
+- scene: the specific moment (tie it to a beat/payoff).
+- productSku: a real SKU from the catalog.
+- category: that product's category.
+- emotionalBeat: the feeling the product anchors (reunion, fresh start, status
+  reveal, reconciliation).
+- ctaTiming: when the shoppable CTA appears (e.g. "post-payoff, last 5s of ep").
+
+Spread placements across the season; do not stack them all in one episode.
+
+Return ONLY valid JSON, no markdown fences, matching exactly:
+{"placements":[{"episode":0,"scene":"","productSku":"","category":"","emotionalBeat":"","ctaTiming":""}]}
