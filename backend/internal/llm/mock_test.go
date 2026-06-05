@@ -9,7 +9,7 @@ import (
 func TestMockReturnsRegisteredJSON(t *testing.T) {
 	m := NewMock()
 	m.Register("concept", `{"logline":"x"}`)
-	out, err := m.GenerateJSON(context.Background(), "concept", "prompt body", nil)
+	out, err := m.GenerateJSON(context.Background(), "concept", "prompt body", nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func TestMockReturnsRegisteredJSON(t *testing.T) {
 
 func TestMockUnknownStageErrors(t *testing.T) {
 	m := NewMock()
-	if _, err := m.GenerateJSON(context.Background(), "nope", "p", nil); err == nil {
+	if _, err := m.GenerateJSON(context.Background(), "nope", "p", nil, nil); err == nil {
 		t.Fatal("expected error for unregistered stage")
 	}
 }

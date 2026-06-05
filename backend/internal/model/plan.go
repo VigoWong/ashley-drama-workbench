@@ -1,14 +1,23 @@
 package model
 
+// Image is a multimodal reference image (preset material or user upload) fed to
+// Gemini alongside the text prompt. Data is raw base64 (no `data:` URI prefix).
+type Image struct {
+	MimeType string `json:"mimeType"`
+	Data     string `json:"data"`
+	Label    string `json:"label,omitempty"`
+}
+
 // Brief is the normalized user input that drives the whole pipeline.
 type Brief struct {
-	Genre       string `json:"genre"`       // e.g. "家装改造逆袭"
-	Episodes    int    `json:"episodes"`    // default 5
-	EpisodeSecs int    `json:"episodeSecs"` // default 30
-	Market      string `json:"market"`      // fixed "US" for MVP
-	Language    string `json:"language"`    // fixed "English" for MVP
-	BrandFocus  string `json:"brandFocus"`  // e.g. "living room sofas, bedroom sets"
-	Extra       string `json:"extra"`       // free-form notes
+	Genre       string  `json:"genre"`       // e.g. "家装改造逆袭"
+	Episodes    int     `json:"episodes"`    // default 5
+	EpisodeSecs int     `json:"episodeSecs"` // default 30
+	Market      string  `json:"market"`      // fixed "US" for MVP
+	Language    string  `json:"language"`    // fixed "English" for MVP
+	BrandFocus  string  `json:"brandFocus"`  // e.g. "living room sofas, bedroom sets"
+	Extra       string  `json:"extra"`       // free-form notes
+	Images      []Image `json:"images,omitempty"` // optional multimodal reference images
 }
 
 func (b *Brief) ApplyDefaults() {

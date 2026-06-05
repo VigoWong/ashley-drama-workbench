@@ -1,4 +1,5 @@
-export interface Brief { genre: string; episodes: number; episodeSecs: number; market?: string; brandFocus: string; extra?: string }
+export interface BriefImage { mimeType: string; data: string; label?: string }
+export interface Brief { genre: string; episodes: number; episodeSecs: number; market?: string; brandFocus: string; extra?: string; images?: BriefImage[] }
 export interface Concept { logline: string; theme: string; audience: string; tone: string; payoffEngine: string; coreConflict: string; tropesUsed: string[] }
 export interface SeriesBible { title: string; genreTags: string[]; episodes: number; episodeSecs: number; platform: string; integrationThesis: string }
 export interface Character { name: string; role: string; bio: string; arc: string; relationships: string }

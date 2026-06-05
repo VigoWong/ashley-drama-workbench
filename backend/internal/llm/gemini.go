@@ -12,6 +12,8 @@ import (
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+
+	"github.com/ashley/drama-workbench/internal/model"
 )
 
 // defaultGeminiBase is Google's native Generative Language API host. It can be
@@ -95,7 +97,12 @@ type geminiContent struct {
 	Parts []geminiPart `json:"parts"`
 }
 type geminiPart struct {
-	Text string `json:"text"`
+	Text       string      `json:"text,omitempty"`
+	InlineData *inlineData `json:"inlineData,omitempty"`
+}
+type inlineData struct {
+	MimeType string `json:"mimeType"`
+	Data     string `json:"data"` // raw base64 (no data: URI prefix)
 }
 type genConfig struct {
 	ResponseMimeType string          `json:"responseMimeType"`
@@ -113,10 +120,10 @@ type geminiResp struct {
 	} `json:"candidates"`
 }
 
-func (g *Gemini) GenerateJSON(ctx context.Context, stage, prompt string, _ map[string]any) ([]byte, error) {
+func (g *Gemini) GenerateJSON(ctx context.Context, stage, prompt string, images []model.Image, _ map[string]any) ([]byte, error) {
 	var lastErr error
 	for attempt := 0; attempt < 3; attempt++ {
-		raw, err := g.once(ctx, prompt)
+		raw, err := g.once(ctx, prompt, images)
 		if err != nil {
 			lastErr = err
 			time.Sleep(time.Duration(attempt+1) * 500 * time.Millisecond)
@@ -133,15 +140,26 @@ func (g *Gemini) GenerateJSON(ctx context.Context, stage, prompt string, _ map[s
 	return nil, lastErr
 }
 
-func (g *Gemini) once(ctx context.Context, prompt string) (string, error) {
+func (g *Gemini) once(ctx context.Context, prompt string, images []model.Image) (string, error) {
 	cfg := genConfig{ResponseMimeType: "application/json", Temperature: 0.9}
 	// Gemini 2.5 models think by default and leak the reasoning into the text
 	// part, which breaks strict-JSON parsing. Disable it so we get clean JSON.
 	if strings.Contains(g.model, "2.5") {
 		cfg.ThinkingConfig = &thinkingConfig{ThinkingBudget: 0}
 	}
+	// Build a single user content with the text prompt followed by any inline
+	// reference images. The wire shape (inlineData/mimeType/data) is identical
+	// for both AI Studio and Vertex.
+	parts := make([]geminiPart, 0, len(images)+1)
+	parts = append(parts, geminiPart{Text: prompt})
+	for _, img := range images {
+		if img.Data == "" {
+			continue
+		}
+		parts = append(parts, geminiPart{InlineData: &inlineData{MimeType: img.MimeType, Data: img.Data}})
+	}
 	body, _ := json.Marshal(geminiReq{
-		Contents:         []geminiContent{{Role: "user", Parts: []geminiPart{{Text: prompt}}}},
+		Contents:         []geminiContent{{Role: "user", Parts: parts}},
 		GenerationConfig: cfg,
 	})
 
