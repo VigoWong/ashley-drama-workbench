@@ -1,0 +1,115 @@
+package model
+
+// Brief is the normalized user input that drives the whole pipeline.
+type Brief struct {
+	Genre       string `json:"genre"`       // e.g. "home makeover revenge"
+	Episodes    int    `json:"episodes"`    // default 12
+	EpisodeSecs int    `json:"episodeSecs"` // default 90
+	Market      string `json:"market"`      // fixed "US" for MVP
+	Language    string `json:"language"`    // fixed "English" for MVP
+	BrandFocus  string `json:"brandFocus"`  // e.g. "living room sofas, bedroom sets"
+	Extra       string `json:"extra"`       // free-form notes
+}
+
+func (b *Brief) ApplyDefaults() {
+	if b.Episodes <= 0 {
+		b.Episodes = 12
+	}
+	if b.EpisodeSecs <= 0 {
+		b.EpisodeSecs = 90
+	}
+	if b.Market == "" {
+		b.Market = "US"
+	}
+	if b.Language == "" {
+		b.Language = "English"
+	}
+}
+
+type Concept struct {
+	Logline      string   `json:"logline"`
+	Theme        string   `json:"theme"`
+	Audience     string   `json:"audience"`
+	Tone         string   `json:"tone"`
+	PayoffEngine string   `json:"payoffEngine"` // the core "爽点引擎"
+	CoreConflict string   `json:"coreConflict"`
+	TropesUsed   []string `json:"tropesUsed"`
+}
+
+type SeriesBible struct {
+	Title             string   `json:"title"`
+	GenreTags         []string `json:"genreTags"`
+	Episodes          int      `json:"episodes"`
+	EpisodeSecs       int      `json:"episodeSecs"`
+	TotalRuntimeMin   int      `json:"totalRuntimeMin"`
+	Platform          string   `json:"platform"`
+	IntegrationThesis string   `json:"integrationThesis"`
+}
+
+type Character struct {
+	Name          string `json:"name"`
+	Role          string `json:"role"` // protagonist / antagonist / love-interest / ...
+	Bio           string `json:"bio"`
+	Arc           string `json:"arc"`
+	Relationships string `json:"relationships"`
+}
+
+type Episode struct {
+	Number      int      `json:"number"`
+	Title       string   `json:"title"`
+	Synopsis    string   `json:"synopsis"`
+	Beats       []string `json:"beats"`
+	Hook        string   `json:"hook"`        // golden-3-seconds opener
+	Cliffhanger string   `json:"cliffhanger"` // ending hook
+	Payoff      string   `json:"payoff"`      // 爽点/反转
+}
+
+type Placement struct {
+	Episode       int    `json:"episode"`
+	Scene         string `json:"scene"`
+	ProductSKU    string `json:"productSku"`
+	Category      string `json:"category"`
+	EmotionalBeat string `json:"emotionalBeat"`
+	CTATiming     string `json:"ctaTiming"`
+}
+
+type Shot struct {
+	Number   int    `json:"number"`
+	ShotType string `json:"shotType"` // CU / MS / WS / POV ...
+	Action   string `json:"action"`
+	Dialogue string `json:"dialogue"`
+}
+
+type HeroScene struct {
+	Episode int    `json:"episode"`
+	Title   string `json:"title"`
+	Shots   []Shot `json:"shots"`
+}
+
+type Production struct {
+	Format         string   `json:"format"` // "9:16 vertical"
+	BudgetTier     string   `json:"budgetTier"`
+	ShotCount      int      `json:"shotCount"`
+	CastSize       int      `json:"castSize"`
+	Locations      []string `json:"locations"`
+	FurnitureProps []string `json:"furnitureProps"`
+}
+
+type Distribution struct {
+	CTACopy       string   `json:"ctaCopy"`
+	LinkPlacement string   `json:"linkPlacement"`
+	Hashtags      []string `json:"hashtags"`
+}
+
+// Plan is the complete structured production plan (the core deliverable).
+type Plan struct {
+	Brief        Brief        `json:"brief"`
+	Concept      Concept      `json:"concept"`
+	Bible        SeriesBible  `json:"bible"`
+	Characters   []Character  `json:"characters"`
+	Episodes     []Episode    `json:"episodes"`
+	Placements   []Placement  `json:"placements"`
+	HeroScenes   []HeroScene  `json:"heroScenes"`
+	Production    Production   `json:"production"`
+	Distribution Distribution `json:"distribution"`
+}
