@@ -49,6 +49,7 @@ func main() {
 	r.With(a.Middleware).Post("/api/propose", handlePropose)
 	r.With(a.Middleware).Post("/api/generate", handleGenerate)
 	r.With(a.Middleware).Post("/api/refine", handleRefine)
+	r.With(a.Middleware).Post("/api/chat", handleChat)
 	r.With(a.Middleware).Get("/api/history", handleHistoryList)
 	r.With(a.Middleware).Get("/api/history/{id}", handleHistoryGet)
 	r.With(a.Middleware).Put("/api/history/{id}", handleHistoryUpdate)
@@ -294,6 +295,62 @@ func handleHistoryDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// chatRequest is the body for /api/chat: one user message plus optional prior
+// text history (user/assistant bubbles only — tool internals are ephemeral) and
+// an optional in-progress plan the client is iterating on. When plan is nil a
+// fresh plan with default brief is started.
+type chatRequest struct {
+	Message string          `json:"message"`
+	History []agent.Message `json:"history,omitempty"`
+	Plan    *model.Plan     `json:"plan,omitempty"`
+}
+
+// handleChat runs one guided-ReAct turn and streams ChatEvents as SSE. It picks
+// the ScriptedLLM (no-key demo) or the Gemini function-calling LLM based on
+// whether real credentials are present, so the endpoint works with zero config.
+func handleChat(w http.ResponseWriter, r *http.Request) {
+	var req chatRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	plan := req.Plan
+	if plan == nil {
+		plan = &model.Plan{}
+	}
+	plan.Brief.ApplyDefaults()
+
+	provider, usingMock := llm.FromEnv()
+	var chatLLM agent.ChatLLM
+	if usingMock {
+		chatLLM = agent.NewScriptedLLM(agent.DemoChatScript())
+	} else {
+		chatLLM = agent.NewGeminiChatLLM(provider)
+	}
+
+	emit := func(e model.ChatEvent) {
+		data, _ := json.Marshal(e)
+		w.Write([]byte("data: "))
+		w.Write(data)
+		w.Write([]byte("\n\n"))
+		flusher.Flush()
+	}
+
+	if _, err := agent.RunChat(r.Context(), chatLLM, plan, provider,
+		agent.DefaultRegistry(), req.History, req.Message, emit); err != nil {
+		log.Printf("chat error: %v", err)
+	}
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
