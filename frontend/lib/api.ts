@@ -1,4 +1,4 @@
-import { Brief, SSEvent } from "./types"
+import { Brief, RefineReq, SSEvent } from "./types"
 import { getToken } from "./auth"
 
 const API = process.env.NEXT_PUBLIC_API ?? "http://localhost:8080"
@@ -11,15 +11,21 @@ export class UnauthorizedError extends Error {
   }
 }
 
-export async function generate(brief: Brief, onEvent: (e: SSEvent) => void): Promise<void> {
+// streamSSE POSTs a JSON body and parses the `data:`-framed SSE response,
+// invoking onEvent per event. Shared by generate() and refine().
+async function streamSSE(
+  path: string,
+  body: unknown,
+  onEvent: (e: SSEvent) => void
+): Promise<void> {
   const token = getToken()
-  const res = await fetch(`${API}/api/generate`, {
+  const res = await fetch(`${API}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify(brief),
+    body: JSON.stringify(body),
   })
   if (res.status === 401) throw new UnauthorizedError()
   if (!res.body) throw new Error("no stream")
@@ -37,4 +43,12 @@ export async function generate(brief: Brief, onEvent: (e: SSEvent) => void): Pro
       if (line) onEvent(JSON.parse(line.slice(6)) as SSEvent)
     }
   }
+}
+
+export function generate(brief: Brief, onEvent: (e: SSEvent) => void): Promise<void> {
+  return streamSSE("/api/generate", brief, onEvent)
+}
+
+export function refine(req: RefineReq, onEvent: (e: SSEvent) => void): Promise<void> {
+  return streamSSE("/api/refine", req, onEvent)
 }

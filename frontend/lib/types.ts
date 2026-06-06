@@ -13,5 +13,6 @@ export interface Visual { label: string; mimeType: string; data: string }
 export interface Plan { brief: Brief; concept: Concept; bible: SeriesBible; characters: Character[]; episodes: Episode[]; placements: Placement[]; heroScenes: HeroScene[]; production: Production; distribution: Distribution; visuals?: Visual[] }
 export type EventType = "stage_start" | "stage_done" | "error" | "complete"
 export interface SSEvent { type: EventType; stage?: string; index?: number; total?: number; message?: string; payload?: unknown; plan?: Plan }
+export interface RefineReq { plan: Plan; fromStage: string; only: boolean; note?: string }
 export interface HistorySummary { id: string; title: string; genre: string; episodes: number; createdAt: string }
 export interface HistoryRecord { id: string; createdAt: string; brief: Brief; plan: Plan }

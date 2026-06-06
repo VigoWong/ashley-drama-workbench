@@ -46,6 +46,7 @@ func main() {
 
 	r.Post("/api/login", a.LoginHandler)
 	r.With(a.Middleware).Post("/api/generate", handleGenerate)
+	r.With(a.Middleware).Post("/api/refine", handleRefine)
 	r.With(a.Middleware).Get("/api/history", handleHistoryList)
 	r.With(a.Middleware).Get("/api/history/{id}", handleHistoryGet)
 	r.Get("/api/health", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
@@ -96,6 +97,55 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 			log.Printf("history: saved plan %s", id)
 		}
 	}
+}
+
+// refineRequest is the body for /api/refine: an existing plan plus which stage
+// to rerun, whether to rerun only that stage or everything from it onward, and
+// an optional transient note steering the regeneration.
+type refineRequest struct {
+	Plan      model.Plan `json:"plan"`
+	FromStage string     `json:"fromStage"`
+	Only      bool       `json:"only"`
+	Note      string     `json:"note"`
+}
+
+// handleRefine reruns part of the pipeline against a user-edited plan and streams
+// the same SSE events as /api/generate. Refine results are intentionally NOT
+// persisted to history: they are interactive drafts that would otherwise
+// pollute the saved-plan list. History only ever holds full /api/generate runs.
+func handleRefine(w http.ResponseWriter, r *http.Request) {
+	var req refineRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !agent.IsStage(req.FromStage) {
+		http.Error(w, "invalid fromStage", http.StatusBadRequest)
+		return
+	}
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	provider, _ := llm.FromEnv()
+	emit := func(e model.Event) {
+		data, _ := json.Marshal(e)
+		w.Write([]byte("data: "))
+		w.Write(data)
+		w.Write([]byte("\n\n"))
+		flusher.Flush()
+	}
+	o := agent.New(provider, emit)
+	if _, err := o.RunFrom(r.Context(), &req.Plan, req.FromStage, req.Only, req.Note); err != nil {
+		log.Printf("refine error: %v", err)
+		return
+	}
+	// Deliberately no db.Save here — see doc comment above.
 }
 
 func handleHistoryList(w http.ResponseWriter, _ *http.Request) {

@@ -24,6 +24,12 @@ func call(ctx context.Context, s *PlanState, stage string, data any, out any, wi
 	if err != nil {
 		return fmt.Errorf("%s: render: %w", stage, err)
 	}
+	// A refine carries an optional user note. Appending it to the rendered
+	// prompt lets any reran stage honor the extra instruction without touching
+	// per-stage templates.
+	if s.Note != "" {
+		prompt += "\n\n[用户额外要求（本次重生成请重点满足）]: " + s.Note
+	}
 	var images []model.Image
 	if withImages {
 		images = s.Plan.Brief.Images
@@ -261,4 +267,15 @@ func AllStages() []Stage {
 		ConceptStage{}, BibleStage{}, CharacterStage{}, EpisodeStage{},
 		PlacementStage{}, HeroStage{}, ProducerStage{}, VisualStage{},
 	}
+}
+
+// IsStage reports whether name is a valid pipeline stage — used to validate the
+// refine request's fromStage before kicking off a rerun.
+func IsStage(name string) bool {
+	for _, st := range AllStages() {
+		if st.Name() == name {
+			return true
+		}
+	}
+	return false
 }

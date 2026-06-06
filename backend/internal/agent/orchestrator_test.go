@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/ashley/drama-workbench/internal/llm"
@@ -58,6 +59,69 @@ func TestOrchestratorRunsAllStages(t *testing.T) {
 	}
 	if !complete {
 		t.Fatal("expected complete event")
+	}
+}
+
+// startedStages returns the stage names that emitted a stage_start event, in
+// order — i.e. which stages actually ran.
+func startedStages(events []model.Event) []string {
+	var out []string
+	for _, e := range events {
+		if e.Type == model.EventStageStart {
+			out = append(out, e.Stage)
+		}
+	}
+	return out
+}
+
+func hasComplete(events []model.Event) bool {
+	for _, e := range events {
+		if e.Type == model.EventComplete {
+			return true
+		}
+	}
+	return false
+}
+
+func TestOrchestratorRunFrom(t *testing.T) {
+	// First produce a full plan so RunFrom has a populated plan to rerun against.
+	plan, err := New(mockAll(), nil).Run(context.Background(), model.Brief{Genre: "makeover", Episodes: 2})
+	if err != nil {
+		t.Fatalf("seed run: %v", err)
+	}
+
+	// from-stage rerun (only=false): placements onward must all run, in order.
+	var fromEvents []model.Event
+	oFrom := New(mockAll(), func(e model.Event) { fromEvents = append(fromEvents, e) })
+	if _, err := oFrom.RunFrom(context.Background(), plan, "placements", false, "测试备注"); err != nil {
+		t.Fatalf("RunFrom from-stage: %v", err)
+	}
+	gotFrom := startedStages(fromEvents)
+	wantFrom := []string{"placements", "hero", "production_distribution", "visuals"}
+	if !reflect.DeepEqual(gotFrom, wantFrom) {
+		t.Fatalf("from-stage subset = %v, want %v", gotFrom, wantFrom)
+	}
+	if !hasComplete(fromEvents) {
+		t.Fatal("from-stage rerun: expected complete event")
+	}
+
+	// single-stage rerun (only=true): exactly one stage runs.
+	var onlyEvents []model.Event
+	oOnly := New(mockAll(), func(e model.Event) { onlyEvents = append(onlyEvents, e) })
+	if _, err := oOnly.RunFrom(context.Background(), plan, "episodes", true, ""); err != nil {
+		t.Fatalf("RunFrom single: %v", err)
+	}
+	gotOnly := startedStages(onlyEvents)
+	if !reflect.DeepEqual(gotOnly, []string{"episodes"}) {
+		t.Fatalf("single-stage subset = %v, want [episodes]", gotOnly)
+	}
+	if !hasComplete(onlyEvents) {
+		t.Fatal("single-stage rerun: expected complete event")
+	}
+
+	// unknown stage must error and emit nothing.
+	if _, err := New(mockAll(), nil).RunFrom(context.Background(), plan, "nope", true, ""); err == nil {
+		t.Fatal("expected error for unknown stage")
 	}
 }
 
