@@ -35,7 +35,6 @@ export default function Home() {
   const [step, setStep] = useState<Step>(1)
   const [events, setEvents] = useState<SSEvent[]>([])
   const [plan, setPlan] = useState<Plan | null>(null)
-  const [running, setRunning] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [lastBrief, setLastBrief] = useState<Brief | undefined>(undefined)
   // concepts: the 2-3 candidate 立意方向 from /api/propose (step 2).
@@ -110,7 +109,6 @@ export default function Home() {
     // concept is fixed, so the pipeline starts at bible → … → visuals.
     setTimelineStages(STAGES.slice(1))
     setFailed(null)
-    setRunning(true)
     setStep(3)
     try {
       await generate(
@@ -134,8 +132,6 @@ export default function Home() {
           ? `${err.message} — 后端是否在 ${API} 运行?`
           : "生成失败。"
       )
-    } finally {
-      setRunning(false)
     }
   }
 
@@ -150,7 +146,6 @@ export default function Home() {
     setEvents([])
     setFailed(null)
     setEditing(false)
-    setRunning(true)
     setStep(3)
     try {
       await refine({ plan, fromStage, only, note }, (e) => {
@@ -168,8 +163,6 @@ export default function Home() {
       setFailed(
         err instanceof Error ? `${err.message} — 后端是否在 ${API} 运行?` : "重跑失败。"
       )
-    } finally {
-      setRunning(false)
     }
   }
 

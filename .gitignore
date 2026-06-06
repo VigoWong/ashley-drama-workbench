@@ -8,3 +8,4 @@ backend/vertex-sa.json
 **/.env
 **/.env.local
 **/*.env.local
+review-*.png

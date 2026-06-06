@@ -584,11 +584,18 @@ function PlacementsSection({ plan, editable, update, onRefine }: SectionProps) {
       <SectionHead no="05" kicker="品牌植入" title="Ashley 植入" stage="placements" onRefine={onRefine} />
       <div className="panel overflow-hidden rounded-2xl">
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left">
+          <table className="w-full min-w-[64rem] border-collapse text-left">
+            <colgroup>
+              <col className="w-14" />
+              <col className="w-36" />
+              <col className="w-[26%]" />
+              <col className="w-[20%]" />
+              <col className="w-[34%]" />
+            </colgroup>
             <thead>
               <tr className="border-b border-bone-500/15">
                 {["集", "产品", "场景", "情绪节点", "CTA 时机"].map((h) => (
-                  <th key={h} className="label-tech px-4 py-3 font-normal">
+                  <th key={h} className="label-tech whitespace-nowrap px-4 py-3 font-normal">
                     {h}
                   </th>
                 ))}
@@ -596,29 +603,29 @@ function PlacementsSection({ plan, editable, update, onRefine }: SectionProps) {
             </thead>
             <tbody>
               {plan.placements.map((p, i) => (
-                <tr key={i} className="border-b border-bone-500/8 transition last:border-0 hover:bg-ink-700/30">
-                  <td className="px-4 py-3 font-mono text-sm text-ember-400">
+                <tr key={i} className="border-b border-bone-500/8 align-top transition last:border-0 hover:bg-ink-700/30">
+                  <td className="whitespace-nowrap px-4 py-3 font-mono text-sm text-ember-400">
                     {p.episode.toString().padStart(2, "0")}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="block font-mono text-[11px] text-bone-500">{p.productSku}</span>
+                    <span className="block whitespace-nowrap font-mono text-[11px] text-bone-500">{p.productSku}</span>
                     <span className="block font-sans text-sm capitalize text-bone-100">{p.category}</span>
                   </td>
-                  <td className="max-w-xs px-4 py-3 font-sans text-sm text-bone-300">
+                  <td className="px-4 py-3 font-sans text-sm leading-relaxed text-bone-300">
                     {editable ? (
                       <EditArea value={p.scene} onChange={(v) => patch(i, "scene", v)} />
                     ) : (
                       p.scene
                     )}
                   </td>
-                  <td className="max-w-xs px-4 py-3 font-sans text-sm text-bone-200">
+                  <td className="px-4 py-3 font-sans text-sm leading-relaxed text-bone-200">
                     {editable ? (
                       <EditArea value={p.emotionalBeat} onChange={(v) => patch(i, "emotionalBeat", v)} />
                     ) : (
                       p.emotionalBeat
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-bone-300">
+                  <td className="px-4 py-3 font-mono text-xs leading-relaxed text-bone-300">
                     {editable ? (
                       <EditText value={p.ctaTiming} onChange={(v) => patch(i, "ctaTiming", v)} />
                     ) : (
