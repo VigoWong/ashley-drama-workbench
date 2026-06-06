@@ -39,7 +39,10 @@ func Propose(ctx context.Context, provider llm.Provider, brief model.Brief) ([]m
 		return nil, fmt.Errorf("propose: render: %w", err)
 	}
 
-	raw, err := provider.GenerateJSON(ctx, "propose", prompt, nil, nil)
+	// Feed any reference images so the proposed 立意方向 are grounded in the user's
+	// uploaded room/product photos — this is the earliest, highest-leverage place
+	// for the images to shape the creative direction.
+	raw, err := provider.GenerateJSON(ctx, "propose", prompt, brief.Images, nil)
 	if err != nil {
 		return nil, fmt.Errorf("propose: generate: %w", err)
 	}
