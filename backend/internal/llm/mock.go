@@ -22,6 +22,13 @@ func (m *Mock) GenerateJSON(_ context.Context, stage, _ string, _ []model.Image,
 	return []byte(v), nil
 }
 
+// GenerateImage is a no-op for the Mock: it implements ImageProvider only to
+// report that image generation is unavailable, so the no-key demo produces a
+// complete text plan with an empty Visuals slice (no images).
+func (m *Mock) GenerateImage(_ context.Context, _ string) ([]byte, string, error) {
+	return nil, "", ErrImagesUnsupported
+}
+
 // DemoMock 返回一个为全部 7 个流水线阶段预注册了丰富、可信示例的 *Mock，这样在没有
 // API Key 的情况下，服务/CLI 也能产出一份完整、合理的方案。题材是面向中国国内市场、
 // 植入 Ashley（爱室丽）家具的「离婚后爆改出租屋逆袭」短剧，使用产品库中真实的 SKU。

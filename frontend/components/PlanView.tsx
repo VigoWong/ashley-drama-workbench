@@ -11,6 +11,7 @@ export default function PlanView({ plan }: Props) {
   return (
     <div className="space-y-10">
       <Masthead plan={plan} />
+      <VisualsSection plan={plan} />
       <ConceptSection plan={plan} />
       <BibleSection plan={plan} />
       <CharactersSection plan={plan} />
@@ -81,6 +82,45 @@ function Stat({ label, value }: { label: string; value: string }) {
       <span className="label-tech">{label}</span>
       <p className="mt-0.5 font-mono text-sm text-bone-50">{value}</p>
     </div>
+  )
+}
+
+/* ---------- 00b Visuals (AI concept art) ---------- */
+
+function VisualsSection({ plan }: Props) {
+  const visuals = plan.visuals ?? []
+  if (visuals.length === 0) return null
+  return (
+    <section>
+      <SectionHead no="00" kicker="AI 生成 · Imagen 文生图" title="分镜 · 概念图" />
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {visuals.map((v, i) => (
+          <figure
+            key={i}
+            className="panel group overflow-hidden rounded-2xl"
+          >
+            <div className="relative aspect-[9/16] overflow-hidden bg-ink-900">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`data:${v.mimeType};base64,${v.data}`}
+                alt={v.label}
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-900/70 via-transparent to-transparent"
+              />
+            </div>
+            <figcaption className="flex items-center justify-between gap-2 px-4 py-3">
+              <span className="font-sans text-sm text-bone-100">{v.label}</span>
+              <span className="rounded border border-ember-500/30 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-ember-200">
+                9:16
+              </span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
   )
 }
 

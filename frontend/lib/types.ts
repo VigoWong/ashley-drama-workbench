@@ -9,7 +9,8 @@ export interface Shot { number: number; shotType: string; action: string; dialog
 export interface HeroScene { episode: number; title: string; shots: Shot[] }
 export interface Production { format: string; budgetTier: string; shotCount: number; castSize: number; locations: string[]; furnitureProps: string[] }
 export interface Distribution { ctaCopy: string; linkPlacement: string; hashtags: string[] }
-export interface Plan { brief: Brief; concept: Concept; bible: SeriesBible; characters: Character[]; episodes: Episode[]; placements: Placement[]; heroScenes: HeroScene[]; production: Production; distribution: Distribution }
+export interface Visual { label: string; mimeType: string; data: string }
+export interface Plan { brief: Brief; concept: Concept; bible: SeriesBible; characters: Character[]; episodes: Episode[]; placements: Placement[]; heroScenes: HeroScene[]; production: Production; distribution: Distribution; visuals?: Visual[] }
 export type EventType = "stage_start" | "stage_done" | "error" | "complete"
 export interface SSEvent { type: EventType; stage?: string; index?: number; total?: number; message?: string; payload?: unknown; plan?: Plan }
 export interface HistorySummary { id: string; title: string; genre: string; episodes: number; createdAt: string }

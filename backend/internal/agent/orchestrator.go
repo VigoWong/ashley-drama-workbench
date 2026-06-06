@@ -84,6 +84,8 @@ func stagePayload(name string, p *model.Plan) any {
 		return p.HeroScenes
 	case "production_distribution":
 		return map[string]any{"production": p.Production, "distribution": p.Distribution}
+	case "visuals":
+		return p.Visuals
 	}
 	return nil
 }

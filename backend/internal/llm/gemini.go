@@ -3,10 +3,12 @@ package llm
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -41,7 +43,14 @@ type Gemini struct {
 	tokenSource oauth2.TokenSource
 	project     string
 	location    string
+
+	// imagenModel is the Imagen model used by GenerateImage (Vertex only).
+	imagenModel string
 }
+
+// defaultImagenModel is Vertex AI's text-to-image model used for poster /
+// storyboard concept art when IMAGEN_MODEL is unset.
+const defaultImagenModel = "imagen-3.0-generate-002"
 
 func NewGemini(apiKey, model, baseURL string) *Gemini {
 	if model == "" {
@@ -79,12 +88,18 @@ func NewVertex(saJSON []byte, project, location, model string) (*Gemini, error) 
 	if project == "" {
 		return nil, fmt.Errorf("vertex: project id missing (set VERTEX_PROJECT or use a key with project_id)")
 	}
+	imagenModel := os.Getenv("IMAGEN_MODEL")
+	if imagenModel == "" {
+		imagenModel = defaultImagenModel
+	}
 	return &Gemini{
 		model:       model,
 		project:     project,
 		location:    location,
+		imagenModel: imagenModel,
 		tokenSource: cfg.TokenSource(context.Background()),
-		client:      &http.Client{Timeout: 90 * time.Second},
+		// Imagen generation is slower than text; give it a roomy timeout.
+		client: &http.Client{Timeout: 120 * time.Second},
 	}, nil
 }
 
@@ -196,6 +211,76 @@ func (g *Gemini) once(ctx context.Context, prompt string, images []model.Image) 
 		return "", fmt.Errorf("gemini: empty response")
 	}
 	return gr.Candidates[0].Content.Parts[0].Text, nil
+}
+
+// imagenReq / imagenResp model Vertex AI's Imagen :predict wire format.
+type imagenReq struct {
+	Instances  []imagenInstance `json:"instances"`
+	Parameters imagenParams     `json:"parameters"`
+}
+type imagenInstance struct {
+	Prompt string `json:"prompt"`
+}
+type imagenParams struct {
+	SampleCount int    `json:"sampleCount"`
+	AspectRatio string `json:"aspectRatio"`
+}
+type imagenResp struct {
+	Predictions []struct {
+		BytesBase64Encoded string `json:"bytesBase64Encoded"`
+		MimeType           string `json:"mimeType"`
+	} `json:"predictions"`
+}
+
+// GenerateImage synthesizes a single 9:16 image from prompt using Vertex AI
+// Imagen. It is only available in Vertex mode (tokenSource != nil); the AI
+// Studio mode returns ErrImagesUnsupported. Returns the decoded image bytes and
+// MIME type. This satisfies the optional ImageProvider capability interface.
+func (g *Gemini) GenerateImage(ctx context.Context, prompt string) ([]byte, string, error) {
+	if g.tokenSource == nil {
+		// AI Studio (API-key) mode does not expose the Imagen predict endpoint.
+		return nil, "", ErrImagesUnsupported
+	}
+	body, _ := json.Marshal(imagenReq{
+		Instances:  []imagenInstance{{Prompt: prompt}},
+		Parameters: imagenParams{SampleCount: 1, AspectRatio: "9:16"},
+	})
+	url := fmt.Sprintf("https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:predict",
+		g.location, g.project, g.location, g.imagenModel)
+	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	tok, err := g.tokenSource.Token()
+	if err != nil {
+		return nil, "", fmt.Errorf("vertex token: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
+
+	resp, err := g.client.Do(req)
+	if err != nil {
+		return nil, "", err
+	}
+	defer resp.Body.Close()
+	data, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, "", fmt.Errorf("imagen %d: %s", resp.StatusCode, truncStr(string(data)))
+	}
+	var ir imagenResp
+	if err := json.Unmarshal(data, &ir); err != nil {
+		return nil, "", fmt.Errorf("imagen: decode response: %w", err)
+	}
+	if len(ir.Predictions) == 0 || ir.Predictions[0].BytesBase64Encoded == "" {
+		return nil, "", fmt.Errorf("imagen: empty prediction")
+	}
+	pred := ir.Predictions[0]
+	raw, err := base64.StdEncoding.DecodeString(pred.BytesBase64Encoded)
+	if err != nil {
+		return nil, "", fmt.Errorf("imagen: base64 decode: %w", err)
+	}
+	mime := pred.MimeType
+	if mime == "" {
+		mime = "image/png"
+	}
+	return raw, mime, nil
 }
 
 func stripFences(s string) string {

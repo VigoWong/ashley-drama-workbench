@@ -18,6 +18,7 @@ const STAGE_LABELS: Record<string, string> = {
   placements: "品牌植入",
   hero: "英雄场景",
   production_distribution: "制作与分发",
+  visuals: "分镜概念图",
 }
 
 const STAGE_SUB: Record<string, string> = {
@@ -28,6 +29,7 @@ const STAGE_SUB: Record<string, string> = {
   placements: "SKU → 场景 → CTA",
   hero: "分镜表",
   production_distribution: "预算 · 格式 · CTA 文案",
+  visuals: "Imagen 文生图",
 }
 
 function deriveStatus(stage: string, events: SSEvent[]): Status {

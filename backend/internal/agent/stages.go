@@ -2,9 +2,14 @@ package agent
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"strings"
 
+	"github.com/ashley/drama-workbench/internal/llm"
 	"github.com/ashley/drama-workbench/internal/model"
 	"github.com/ashley/drama-workbench/internal/prompts"
 	"github.com/ashley/drama-workbench/internal/tools"
@@ -167,10 +172,93 @@ func (ProducerStage) Run(ctx context.Context, s *PlanState) error {
 	return nil
 }
 
+// VisualStage generates AI concept art (a series key-art poster plus a few hero
+// scene stills) via the provider's optional ImageProvider capability (Vertex
+// Imagen). It is best-effort and resilient by design:
+//   - If the provider does not support image generation, it is a no-op (no error,
+//     no images) — the text plan is already complete.
+//   - Individual image failures are logged and skipped; one bad image never
+//     drops the others.
+//   - The stage always returns nil so the orchestrator never retries or aborts
+//     the whole pipeline over visuals.
+type VisualStage struct{}
+
+func (VisualStage) Name() string { return "visuals" }
+
+// maxVisuals caps how many concept images we request (1 poster + up to 2 hero
+// scenes). Each Imagen call is slow and costly, so we keep the gallery tight.
+const maxVisuals = 3
+
+func (VisualStage) Run(ctx context.Context, s *PlanState) error {
+	ip, ok := s.Provider.(llm.ImageProvider)
+	if !ok {
+		return nil // provider cannot make images; text plan stands on its own
+	}
+
+	type job struct {
+		label  string
+		prompt string
+	}
+	jobs := make([]job, 0, maxVisuals)
+
+	// 1) Series key-art poster.
+	title := s.Plan.Bible.Title
+	if title == "" {
+		title = s.Plan.Concept.Logline
+	}
+	posterPrompt := fmt.Sprintf(
+		"vertical 9:16 cinematic key art poster for a Chinese vertical short drama titled %q. "+
+			"Genre and tone: %s. Premise: %s. "+
+			"Modern Chinese home interior with stylish furniture, dramatic moody lighting, "+
+			"high-end streaming poster look, photorealistic, no text, no watermark, no logo.",
+		title, s.Plan.Concept.Tone, s.Plan.Concept.Logline,
+	)
+	jobs = append(jobs, job{label: "系列海报", prompt: posterPrompt})
+
+	// 2) One still per hero scene, until we hit the cap.
+	for _, h := range s.Plan.HeroScenes {
+		if len(jobs) >= maxVisuals {
+			break
+		}
+		var actions []string
+		for _, sh := range h.Shots {
+			if sh.Action != "" {
+				actions = append(actions, sh.Action)
+			}
+		}
+		desc := strings.Join(actions, "; ")
+		scenePrompt := fmt.Sprintf(
+			"vertical 9:16 cinematic film still for a Chinese vertical short drama scene titled %q. "+
+				"Scene action: %s. "+
+				"Modern Chinese home interior with realistic furniture, dramatic cinematic lighting, "+
+				"photorealistic, shallow depth of field, no text, no watermark, no logo.",
+			h.Title, desc,
+		)
+		jobs = append(jobs, job{label: "分镜·" + h.Title, prompt: scenePrompt})
+	}
+
+	for _, j := range jobs {
+		data, mime, err := ip.GenerateImage(ctx, j.prompt)
+		if err != nil {
+			if errors.Is(err, llm.ErrImagesUnsupported) {
+				return nil // capability vanished; stop quietly
+			}
+			log.Printf("visuals: skip %q: %v", j.label, err)
+			continue
+		}
+		s.Plan.Visuals = append(s.Plan.Visuals, model.Visual{
+			Label:    j.label,
+			MimeType: mime,
+			Data:     base64.StdEncoding.EncodeToString(data),
+		})
+	}
+	return nil
+}
+
 // AllStages returns the ordered pipeline.
 func AllStages() []Stage {
 	return []Stage{
 		ConceptStage{}, BibleStage{}, CharacterStage{}, EpisodeStage{},
-		PlacementStage{}, HeroStage{}, ProducerStage{},
+		PlacementStage{}, HeroStage{}, ProducerStage{}, VisualStage{},
 	}
 }

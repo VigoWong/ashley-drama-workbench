@@ -22,6 +22,7 @@ const STAGES = [
   "placements",
   "hero",
   "production_distribution",
+  "visuals",
 ]
 
 const API = process.env.NEXT_PUBLIC_API ?? "http://localhost:8080"

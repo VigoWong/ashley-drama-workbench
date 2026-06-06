@@ -110,6 +110,16 @@ type Distribution struct {
 	Hashtags      []string `json:"hashtags"`
 }
 
+// Visual is an AI-generated concept image (poster / storyboard key frame). Data
+// is raw base64-encoded PNG (no `data:` URI prefix). Visuals are produced by the
+// optional VisualStage via an ImageProvider (Vertex Imagen); when image
+// generation is unavailable the slice stays empty and the text plan is complete.
+type Visual struct {
+	Label    string `json:"label"`
+	MimeType string `json:"mimeType"`
+	Data     string `json:"data"` // raw base64 PNG
+}
+
 // Plan is the complete structured production plan (the core deliverable).
 type Plan struct {
 	Brief        Brief        `json:"brief"`
@@ -121,4 +131,5 @@ type Plan struct {
 	HeroScenes   []HeroScene  `json:"heroScenes"`
 	Production    Production   `json:"production"`
 	Distribution Distribution `json:"distribution"`
+	Visuals      []Visual     `json:"visuals,omitempty"`
 }
