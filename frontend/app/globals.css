@@ -18,6 +18,10 @@
   --color-bone-50: #f7f1e7;
   --color-bone-100: #efe6d6;
   --color-bone-300: #cdbfa9;
+  /* bone-400: the readable muted tier — for tech labels & meta text. Brighter
+     than bone-500 so 10px uppercase mono clears WCAG AA on ink/panel surfaces.
+     bone-500 is now reserved for hairline borders & grid lines (low-opacity). */
+  --color-bone-400: #bdab8d;
   --color-bone-500: #998a74;
 
   /* Ember — the brand-warm signal accent (film glow / golden hour) */
@@ -94,7 +98,7 @@ body::before {
   font-size: 0.625rem;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--color-bone-500);
+  color: var(--color-bone-400);
 }
 
 /* Utility: hairline studio panel */

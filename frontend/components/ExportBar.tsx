@@ -53,7 +53,7 @@ export default function ExportBar({ plan }: Props) {
             download(`${base}.json`, JSON.stringify(plan, null, 2), "application/json")
             ping("已导出 JSON")
           }}
-          className="rounded-lg border border-bone-500/25 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
+          className="rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
         >
           ⤓ JSON
         </button>

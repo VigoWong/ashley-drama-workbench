@@ -74,7 +74,7 @@ export default function StageTimeline({ stages, events }: Props) {
           <span className="label-tech">已完成</span>
           <p className="font-mono text-lg text-ember-400">
             {doneCount.toString().padStart(2, "0")}
-            <span className="text-bone-500">/{stages.length.toString().padStart(2, "0")}</span>
+            <span className="text-bone-400">/{stages.length.toString().padStart(2, "0")}</span>
           </p>
         </div>
       </div>
@@ -117,7 +117,7 @@ export default function StageTimeline({ stages, events }: Props) {
                 <div className="flex items-baseline justify-between gap-3">
                   <h3
                     className={`font-sans text-sm font-medium transition ${
-                      status === "pending" ? "text-bone-500" : "text-bone-50"
+                      status === "pending" ? "text-bone-400" : "text-bone-50"
                     }`}
                   >
                     {STAGE_LABELS[stage] ?? stage}
@@ -126,7 +126,7 @@ export default function StageTimeline({ stages, events }: Props) {
                     {status === "running" ? "生成中…" : status === "done" ? "完成 ✓" : "待命"}
                   </span>
                 </div>
-                <p className="mt-0.5 font-mono text-[10px] text-bone-500">
+                <p className="mt-0.5 font-mono text-[10px] text-bone-400">
                   {STAGE_SUB[stage] ?? ""}
                 </p>
 
@@ -192,7 +192,7 @@ function StatusNode({ status, index }: { status: Status; index: number }) {
   }
   return (
     <div className="flex h-8 w-8 items-center justify-center rounded-full border border-bone-500/20 bg-ink-800">
-      <span className="font-mono text-[10px] text-bone-500">
+      <span className="font-mono text-[10px] text-bone-400">
         {(index + 1).toString().padStart(2, "0")}
       </span>
     </div>

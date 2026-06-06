@@ -117,7 +117,7 @@ function RefineBar({
           className={`rounded-lg border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition ${
             openOnly === true
               ? "border-ember-500/60 bg-ember-500/15 text-ember-200"
-              : "border-bone-500/25 text-bone-300 hover:border-ember-400/50 hover:text-ember-400"
+              : "border-bone-500/20 text-bone-300 hover:border-ember-400/50 hover:text-ember-400"
           }`}
         >
           ↻ 重生成本段
@@ -128,7 +128,7 @@ function RefineBar({
           className={`rounded-lg border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition ${
             openOnly === false
               ? "border-ember-500/60 bg-ember-500/15 text-ember-200"
-              : "border-bone-500/25 text-bone-300 hover:border-ember-400/50 hover:text-ember-400"
+              : "border-bone-500/20 text-bone-300 hover:border-ember-400/50 hover:text-ember-400"
           }`}
         >
           ⏬ 从此往下重跑
@@ -152,7 +152,7 @@ function RefineBar({
                 setOpenOnly(null)
                 setNote("")
               }}
-              className="rounded-lg border border-bone-500/25 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-bone-300 transition hover:border-bone-500/50"
+              className="rounded-lg border border-bone-500/20 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-bone-300 transition hover:border-bone-500/50"
             >
               取消
             </button>
@@ -185,7 +185,7 @@ function SectionHead({
   onRefine?: (fromStage: string, only: boolean, note: string) => void
 }) {
   return (
-    <div className="mb-5 flex items-start justify-between gap-4 border-b border-bone-500/12 pb-3">
+    <div className="mb-5 flex items-start justify-between gap-4 border-b border-bone-500/15 pb-3">
       <div className="flex items-baseline gap-4">
         <span className="font-mono text-xs text-ember-500/70">{no}</span>
         <div>
@@ -414,7 +414,7 @@ function CharactersSection({ plan, editable, update, onRefine }: SectionProps) {
               )}
               <span
                 className={`whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider ${
-                  ROLE_TINT[c.role?.toLowerCase()] ?? "border-bone-500/30 text-bone-500"
+                  ROLE_TINT[c.role?.toLowerCase()] ?? "border-bone-500/30 text-bone-400"
                 }`}
               >
                 {c.role}
@@ -435,7 +435,7 @@ function CharactersSection({ plan, editable, update, onRefine }: SectionProps) {
               )
             )}
             {c.relationships && (
-              <p className="mt-auto pt-3 font-mono text-[10px] uppercase tracking-wider text-bone-500">
+              <p className="mt-auto pt-3 font-mono text-[10px] uppercase tracking-wider text-bone-400">
                 {c.relationships}
               </p>
             )}
@@ -474,9 +474,9 @@ function EpisodesSection({ plan, editable, update, onRefine }: SectionProps) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-sans text-sm font-medium text-bone-50">{e.title}</span>
-                  <span className="block truncate font-mono text-[10px] text-bone-500">{e.hook}</span>
+                  <span className="block truncate font-mono text-[10px] text-bone-400">{e.hook}</span>
                 </span>
-                <span className={`font-mono text-xs text-bone-500 transition ${isOpen ? "rotate-90" : ""}`}>
+                <span className={`font-mono text-xs text-bone-400 transition ${isOpen ? "rotate-90" : ""}`}>
                   ▸
                 </span>
               </button>
@@ -603,12 +603,12 @@ function PlacementsSection({ plan, editable, update, onRefine }: SectionProps) {
             </thead>
             <tbody>
               {plan.placements.map((p, i) => (
-                <tr key={i} className="border-b border-bone-500/8 align-top transition last:border-0 hover:bg-ink-700/30">
+                <tr key={i} className="border-b border-bone-500/10 align-top transition last:border-0 hover:bg-ink-700/30">
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-sm text-ember-400">
                     {p.episode.toString().padStart(2, "0")}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="block whitespace-nowrap font-mono text-[11px] text-bone-500">{p.productSku}</span>
+                    <span className="block whitespace-nowrap font-mono text-[11px] text-bone-400">{p.productSku}</span>
                     <span className="block font-sans text-sm capitalize text-bone-100">{p.category}</span>
                   </td>
                   <td className="px-4 py-3 font-sans text-sm leading-relaxed text-bone-300">
@@ -651,16 +651,16 @@ function HeroSection({ plan, onRefine }: SectionProps) {
       <div className="grid gap-5 lg:grid-cols-2">
         {plan.heroScenes.map((h, i) => (
           <article key={i} className="panel overflow-hidden rounded-2xl">
-            <div className="flex items-center justify-between border-b border-bone-500/12 px-5 py-3">
+            <div className="flex items-center justify-between border-b border-bone-500/15 px-5 py-3">
               <h3 className="font-display text-lg font-semibold tracking-tight">{h.title}</h3>
               <span className="rounded bg-ink-700 px-2 py-0.5 font-mono text-[10px] text-ember-400">
                 EP {h.episode.toString().padStart(2, "0")}
               </span>
             </div>
-            <ol className="divide-y divide-bone-500/8">
+            <ol className="divide-y divide-bone-500/10">
               {h.shots.map((s) => (
                 <li key={s.number} className="flex gap-4 px-5 py-3">
-                  <span className="font-mono text-xs text-bone-500">
+                  <span className="font-mono text-xs text-bone-400">
                     {s.number.toString().padStart(2, "0")}
                   </span>
                   <span className="flex-shrink-0 rounded border border-ember-500/30 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-ember-200">

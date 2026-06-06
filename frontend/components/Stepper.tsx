@@ -35,7 +35,7 @@ export default function Stepper({ current, onStep }: Props) {
                       ? "border-ember-500 bg-ember-500 text-ink-900 shadow-[0_0_18px_rgba(228,132,47,0.45)]"
                       : status === "done"
                         ? "border-ember-500/60 bg-ember-500/15 text-ember-300"
-                        : "border-bone-500/25 text-bone-500"
+                        : "border-bone-500/20 text-bone-400"
                   }`}
                 >
                   {status === "done" ? "✓" : s.n.toString().padStart(2, "0")}
@@ -43,7 +43,7 @@ export default function Stepper({ current, onStep }: Props) {
                 <span className="text-left">
                   <span
                     className={`block font-sans text-sm font-medium transition ${
-                      status === "todo" ? "text-bone-500" : "text-bone-50"
+                      status === "todo" ? "text-bone-400" : "text-bone-50"
                     }`}
                   >
                     {s.label}

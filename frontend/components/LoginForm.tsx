@@ -40,7 +40,7 @@ export default function LoginForm({ onAuthed }: Props) {
           <h1 className="font-display text-2xl font-semibold tracking-tight text-bone-50">
             短剧生产工作台
           </h1>
-          <p className="font-mono text-[11px] text-bone-500">登录以进入工作台</p>
+          <p className="font-mono text-[11px] text-bone-400">登录以进入工作台</p>
         </div>
 
         <form onSubmit={handleSubmit} className="panel rounded-2xl p-6 sm:p-8">
@@ -88,7 +88,7 @@ export default function LoginForm({ onAuthed }: Props) {
               {busy ? "登录中…" : "登 录"}
             </button>
 
-            <p className="text-center font-mono text-[10px] text-bone-500">
+            <p className="text-center font-mono text-[10px] text-bone-400">
               默认账号 admin / admin
             </p>
           </div>

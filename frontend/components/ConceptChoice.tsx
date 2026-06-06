@@ -92,7 +92,7 @@ export default function ConceptChoice({ concepts, onConfirm, onBack }: Props) {
       <div className="panel rounded-2xl p-6">
         <div className="mb-4 flex items-center gap-2">
           <span className="label-tech">微调所选方向</span>
-          <span className="font-mono text-[10px] text-bone-500">
+          <span className="font-mono text-[10px] text-bone-400">
             · 方向 {String(selected + 1).padStart(2, "0")}
           </span>
         </div>
@@ -141,7 +141,7 @@ export default function ConceptChoice({ concepts, onConfirm, onBack }: Props) {
       <div className="flex items-center justify-between gap-3">
         <button
           onClick={onBack}
-          className="rounded-lg border border-bone-500/25 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
+          className="rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
         >
           ← 返回修改需求
         </button>
