@@ -104,8 +104,12 @@ func RunChat(
 		}
 	}
 
-	// Hit the step ceiling: close the turn gracefully.
-	emit(model.ChatEvent{Type: model.ChatMessageDone, Text: "本轮步骤已达上限,请补充指令后我再继续。"})
+	// Hit the step ceiling: close the turn gracefully. Emit delta before done so
+	// the front end always sees the message.delta→message.done pair, same as the
+	// normal final-message path above.
+	ceiling := "本轮步骤已达上限,请补充指令后我再继续。"
+	emit(model.ChatEvent{Type: model.ChatMessageDelta, Text: ceiling})
+	emit(model.ChatEvent{Type: model.ChatMessageDone, Text: ceiling})
 	emit(model.ChatEvent{Type: model.ChatTurnDone, Plan: plan})
 	return history, nil
 }
