@@ -31,9 +31,11 @@
   --color-signal-go: #8fb98a;
   --color-signal-stop: #d9694f;
 
-  --font-display: var(--font-display), "Times New Roman", serif;
-  --font-sans: var(--font-sans), system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, monospace;
+  /* 拉丁字体在前，CJK 字体兜底：浏览器按字形回退，中文自动落到 Noto SC，
+     而非系统宋体/等宽。font-mono 的中文也用 Noto Sans SC（中文本就非等宽）。 */
+  --font-display: var(--font-display), var(--font-display-cjk), "Songti SC", "Noto Serif CJK SC", serif;
+  --font-sans: var(--font-sans), var(--font-sans-cjk), system-ui, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, var(--font-sans-cjk), "PingFang SC", monospace;
 
   --animate-shimmer: shimmer 2.2s linear infinite;
   --animate-rise: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
