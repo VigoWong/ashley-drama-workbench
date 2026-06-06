@@ -23,3 +23,12 @@ export async function getHistory(id: string): Promise<HistoryRecord> {
   if (!res.ok) throw new Error(`加载方案详情失败 (${res.status})`)
   return (await res.json()) as HistoryRecord
 }
+
+export async function deleteHistory(id: string): Promise<void> {
+  const res = await fetch(`${API}/api/history/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  })
+  if (res.status === 401) throw new UnauthorizedError()
+  if (!res.ok && res.status !== 204) throw new Error(`删除失败 (${res.status})`)
+}

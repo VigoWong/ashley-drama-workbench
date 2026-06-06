@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { HistoryRecord, HistorySummary } from "@/lib/types"
-import { listHistory, getHistory } from "@/lib/history"
+import { listHistory, getHistory, deleteHistory } from "@/lib/history"
 import { UnauthorizedError } from "@/lib/api"
 import PlanView from "@/components/PlanView"
 
@@ -29,6 +29,7 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
   const [loading, setLoading] = useState(true)
   const [detail, setDetail] = useState<HistoryRecord | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -71,18 +72,36 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
     }
   }
 
+  async function removeItem(id: string, title: string) {
+    if (!window.confirm(`确定删除方案「${title || "未命名方案"}」?此操作不可恢复。`)) return
+    setDeletingId(id)
+    setError(null)
+    try {
+      await deleteHistory(id)
+      setItems((prev) => (prev ? prev.filter((x) => x.id !== id) : prev))
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized()
+        return
+      }
+      setError(err instanceof Error ? err.message : "删除失败")
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   /* ---- Detail view ---- */
   if (detail) {
     return (
       <div className="space-y-8">
         <div className="flex items-center justify-between">
-          <p className="font-mono text-xs text-bone-500">
+          <p className="font-mono text-xs text-bone-400">
             历史方案 · 共 {detail.plan.episodes?.length ?? 0} 集 · 生成于{" "}
             {formatTime(detail.createdAt)}
           </p>
           <button
             onClick={() => setDetail(null)}
-            className="rounded-lg border border-bone-500/25 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
+            className="rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
           >
             ← 返回列表
           </button>
@@ -98,20 +117,20 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <span className="label-tech">历史方案</span>
-          <p className="mt-1 font-mono text-xs text-bone-500">
+          <p className="mt-1 font-mono text-xs text-bone-400">
             过往生成的全部方案,点击查看完整内容。
           </p>
         </div>
         <button
           onClick={onBack}
-          className="rounded-lg border border-bone-500/25 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
+          className="rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
         >
           ← 返回工作台
         </button>
       </div>
 
       {loading && (
-        <p className="font-mono text-sm text-bone-500">加载中…</p>
+        <p className="font-mono text-sm text-bone-400">加载中…</p>
       )}
 
       {error && (
@@ -121,7 +140,7 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
       )}
 
       {detailLoading && (
-        <p className="font-mono text-sm text-bone-500">正在加载方案详情…</p>
+        <p className="font-mono text-sm text-bone-400">正在加载方案详情…</p>
       )}
 
       {!loading && !error && items && items.length === 0 && (
@@ -129,7 +148,7 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
           <p className="font-sans text-sm text-bone-300">
             暂无历史方案。
           </p>
-          <p className="mt-2 font-mono text-xs text-bone-500">
+          <p className="mt-2 font-mono text-xs text-bone-400">
             生成第一份方案后,会自动保存到这里。
           </p>
         </div>
@@ -138,11 +157,17 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
       {!loading && !error && items && items.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2">
           {items.map((it) => (
-            <button
+            <div
               key={it.id}
-              onClick={() => openDetail(it.id)}
-              disabled={detailLoading}
-              className="panel group flex flex-col gap-3 rounded-xl border border-bone-500/15 bg-ink-800/60 p-5 text-left transition hover:border-ember-400/50 disabled:cursor-not-allowed disabled:opacity-60"
+              role="button"
+              tabIndex={0}
+              onClick={() => !detailLoading && deletingId !== it.id && openDetail(it.id)}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && !detailLoading) openDetail(it.id)
+              }}
+              className={`panel group relative flex cursor-pointer flex-col gap-3 rounded-xl border border-bone-500/15 bg-ink-800/60 p-5 text-left transition hover:border-ember-400/50 ${
+                deletingId === it.id ? "opacity-50" : ""
+              }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <h3 className="font-display text-lg font-semibold leading-tight text-bone-100 group-hover:text-ember-400">
@@ -158,11 +183,22 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
                     题材 · {it.genre}
                   </span>
                 )}
-                <span className="font-mono text-[11px] text-bone-500">
+                <span className="font-mono text-[11px] text-bone-400">
                   {formatTime(it.createdAt)}
                 </span>
               </div>
-            </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  removeItem(it.id, it.title)
+                }}
+                disabled={deletingId === it.id}
+                aria-label="删除该方案"
+                className="absolute bottom-3 right-3 rounded-md border border-bone-500/20 bg-ink-900/70 px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-bone-400 opacity-0 transition hover:border-signal-stop/50 hover:text-signal-stop group-hover:opacity-100 disabled:opacity-60"
+              >
+                {deletingId === it.id ? "删除中…" : "🗑 删除"}
+              </button>
+            </div>
           ))}
         </div>
       )}

@@ -148,6 +148,14 @@ func (s *Store) Get(id string) (*Record, error) {
 	return &rec, nil
 }
 
+// Delete removes a plan by id. Deleting a missing id is not an error (idempotent).
+func (s *Store) Delete(id string) error {
+	if _, err := s.db.Exec(`DELETE FROM plans WHERE id = $1`, id); err != nil {
+		return fmt.Errorf("store: delete: %w", err)
+	}
+	return nil
+}
+
 // newID returns 16 random bytes hex-encoded (32 chars).
 func newID() (string, error) {
 	b := make([]byte, 16)

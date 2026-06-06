@@ -50,6 +50,7 @@ func main() {
 	r.With(a.Middleware).Post("/api/refine", handleRefine)
 	r.With(a.Middleware).Get("/api/history", handleHistoryList)
 	r.With(a.Middleware).Get("/api/history/{id}", handleHistoryGet)
+	r.With(a.Middleware).Delete("/api/history/{id}", handleHistoryDelete)
 	r.Get("/api/health", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
 
 	port := os.Getenv("PORT")
@@ -224,6 +225,19 @@ func handleHistoryGet(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, rec)
 }
 
+func handleHistoryDelete(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	if err := db.Delete(chi.URLParam(r, "id")); err != nil {
+		log.Printf("history: delete failed: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -233,7 +247,7 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
