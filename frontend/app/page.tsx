@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Brief, Plan, SSEvent } from "@/lib/types"
-import { generate, refine, UnauthorizedError } from "@/lib/api"
+import { Brief, Concept, Plan, SSEvent } from "@/lib/types"
+import { generate, propose, refine, UnauthorizedError } from "@/lib/api"
 import { getToken, clearToken } from "@/lib/auth"
 import InputForm from "@/components/InputForm"
+import ConceptChoice from "@/components/ConceptChoice"
 import StageTimeline from "@/components/StageTimeline"
 import PlanView from "@/components/PlanView"
 import ExportBar from "@/components/ExportBar"
@@ -37,6 +38,10 @@ export default function Home() {
   const [running, setRunning] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [lastBrief, setLastBrief] = useState<Brief | undefined>(undefined)
+  // concepts: the 2-3 candidate 立意方向 from /api/propose (step 2).
+  const [concepts, setConcepts] = useState<Concept[]>([])
+  // proposing: loading state while step 2 fetches directions.
+  const [proposing, setProposing] = useState(false)
   // editing: whether step-3 fields are editable (draft mode).
   const [editing, setEditing] = useState(false)
   // timelineStages: which stages the StageTimeline shows. Full set for a fresh
@@ -55,6 +60,7 @@ export default function Home() {
     setStep(1)
     setEvents([])
     setPlan(null)
+    setConcepts([])
     setFailed(null)
   }
 
@@ -64,27 +70,63 @@ export default function Home() {
     setView("workbench")
   }
 
+  // run is step 1 → step 2: stash the brief, fetch 2-3 立意方向, and move to the
+  // selection screen. Generation does not start until the user picks a direction.
   async function run(brief: Brief) {
     setLastBrief(brief)
     setEvents([])
     setPlan(null)
     setEditing(false)
-    setTimelineStages(STAGES)
+    setConcepts([])
+    setTimelineStages(STAGES.slice(1))
     setFailed(null)
-    setRunning(true)
+    setProposing(true)
     setStep(2)
     try {
-      await generate(brief, (e) => {
-        setEvents((prev) => [...prev, e])
-        if (e.type === "complete" && e.plan) {
-          setPlan(e.plan)
-          setStep(3)
-        }
-      })
+      const cs = await propose(brief)
+      setConcepts(cs)
     } catch (err) {
       if (err instanceof UnauthorizedError) {
-        clearToken()
-        setAuthed(false)
+        handleUnauthorized()
+        return
+      }
+      setFailed(
+        err instanceof Error
+          ? `${err.message} — 后端是否在 ${API} 运行?`
+          : "立意提案失败。"
+      )
+    } finally {
+      setProposing(false)
+    }
+  }
+
+  // confirmConcept is step 2 → step 3 → step 4: with a chosen (possibly tweaked)
+  // direction, run the pipeline from the bible stage (concept is already fixed).
+  async function confirmConcept(chosen: Concept) {
+    if (!lastBrief) return
+    setEvents([])
+    setPlan(null)
+    setEditing(false)
+    // concept is fixed, so the pipeline starts at bible → … → visuals.
+    setTimelineStages(STAGES.slice(1))
+    setFailed(null)
+    setRunning(true)
+    setStep(3)
+    try {
+      await generate(
+        lastBrief,
+        (e) => {
+          setEvents((prev) => [...prev, e])
+          if (e.type === "complete" && e.plan) {
+            setPlan(e.plan)
+            setStep(4)
+          }
+        },
+        chosen
+      )
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        handleUnauthorized()
         return
       }
       setFailed(
@@ -109,13 +151,13 @@ export default function Home() {
     setFailed(null)
     setEditing(false)
     setRunning(true)
-    setStep(2)
+    setStep(3)
     try {
       await refine({ plan, fromStage, only, note }, (e) => {
         setEvents((prev) => [...prev, e])
         if (e.type === "complete" && e.plan) {
           setPlan(e.plan)
-          setStep(3)
+          setStep(4)
         }
       })
     } catch (err) {
@@ -136,6 +178,7 @@ export default function Home() {
     setEvents([])
     setPlan(null)
     setEditing(false)
+    setConcepts([])
     setTimelineStages(STAGES)
     setFailed(null)
   }
@@ -208,11 +251,43 @@ export default function Home() {
 
         {/* ---- Step 1 · Brief ---- */}
         {step === 1 && (
-          <InputForm onSubmit={run} disabled={running} defaults={lastBrief} />
+          <InputForm onSubmit={run} disabled={proposing} defaults={lastBrief} />
         )}
 
-        {/* ---- Step 2 · Pipeline ---- */}
+        {/* ---- Step 2 · Choose direction ---- */}
         {step === 2 && (
+          <div className="space-y-6">
+            {proposing && (
+              <div className="panel rounded-2xl p-10 text-center">
+                <span className="mx-auto mb-4 block h-6 w-6 animate-spin rounded-full border-2 border-ember-500/30 border-t-ember-400" />
+                <p className="font-mono text-sm text-bone-300">
+                  正在生成立意方向…
+                </p>
+              </div>
+            )}
+            {!proposing && failed && (
+              <div className="rounded-xl border border-signal-stop/40 bg-signal-stop/10 p-4">
+                <p className="font-mono text-sm text-signal-stop">✕ {failed}</p>
+                <button
+                  onClick={restart}
+                  className="mt-3 rounded-lg border border-bone-500/25 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
+                >
+                  ← 返回修改需求
+                </button>
+              </div>
+            )}
+            {!proposing && !failed && concepts.length > 0 && (
+              <ConceptChoice
+                concepts={concepts}
+                onConfirm={confirmConcept}
+                onBack={restart}
+              />
+            )}
+          </div>
+        )}
+
+        {/* ---- Step 3 · Pipeline ---- */}
+        {step === 3 && (
           <div className="space-y-6">
             <StageTimeline stages={timelineStages} events={events} />
             {failed && (
@@ -229,8 +304,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* ---- Step 3 · Plan ---- */}
-        {step === 3 && plan && (
+        {/* ---- Step 4 · Plan ---- */}
+        {step === 4 && plan && (
           <div className="space-y-8">
             <div className="flex items-center justify-between gap-3">
               <p className="font-mono text-xs text-bone-500">

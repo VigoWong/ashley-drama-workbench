@@ -45,6 +45,7 @@ func main() {
 	}
 
 	r.Post("/api/login", a.LoginHandler)
+	r.With(a.Middleware).Post("/api/propose", handlePropose)
 	r.With(a.Middleware).Post("/api/generate", handleGenerate)
 	r.With(a.Middleware).Post("/api/refine", handleRefine)
 	r.With(a.Middleware).Get("/api/history", handleHistoryList)
@@ -59,12 +60,42 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+port, r))
 }
 
-func handleGenerate(w http.ResponseWriter, r *http.Request) {
+// handlePropose returns 2-3 candidate 立意方向 for a brief as plain JSON (NOT SSE):
+// {"concepts": [...]}. It is the first step of the multi-direction selection flow —
+// the user picks/tweaks one, then /api/generate continues from there. This call is
+// cheap (one LLM round-trip) so it does not need streaming and is not persisted.
+func handlePropose(w http.ResponseWriter, r *http.Request) {
 	var brief model.Brief
 	if err := json.NewDecoder(r.Body).Decode(&brief); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	provider, _ := llm.FromEnv()
+	concepts, err := agent.Propose(r.Context(), provider, brief)
+	if err != nil {
+		log.Printf("propose error: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"concepts": concepts})
+}
+
+// generateRequest embeds Brief so genre/episodes/… stay at the top level (keeping
+// the legacy flat body working), plus an optional Concept. When Concept is set the
+// user has already picked a 立意方向 via /api/propose, so we skip the concept stage
+// and run the pipeline from the bible stage onward against that chosen direction.
+type generateRequest struct {
+	model.Brief
+	Concept *model.Concept `json:"concept"`
+}
+
+func handleGenerate(w http.ResponseWriter, r *http.Request) {
+	var req generateRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	brief := req.Brief
 	flusher, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
@@ -83,7 +114,19 @@ func handleGenerate(w http.ResponseWriter, r *http.Request) {
 		flusher.Flush()
 	}
 	o := agent.New(provider, emit)
-	plan, err := o.Run(r.Context(), brief)
+
+	var plan *model.Plan
+	var err error
+	if req.Concept != nil {
+		// User picked (and maybe tweaked) a 立意方向: seed the plan with it and run
+		// from the bible stage, skipping concept generation.
+		seeded := &model.Plan{Brief: brief, Concept: *req.Concept}
+		seeded.Brief.ApplyDefaults()
+		plan, err = o.RunFrom(r.Context(), seeded, "bible", false, "")
+	} else {
+		// Legacy full run: generate the concept too.
+		plan, err = o.Run(r.Context(), brief)
+	}
 	if err != nil {
 		log.Printf("pipeline error: %v", err)
 		return

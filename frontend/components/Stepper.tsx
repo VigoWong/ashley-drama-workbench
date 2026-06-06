@@ -1,6 +1,6 @@
 "use client"
 
-export type Step = 1 | 2 | 3
+export type Step = 1 | 2 | 3 | 4
 
 interface Props {
   current: Step
@@ -9,8 +9,9 @@ interface Props {
 
 const STEPS = [
   { n: 1 as Step, label: "填写需求", sub: "Brief" },
-  { n: 2 as Step, label: "生成中", sub: "Pipeline" },
-  { n: 3 as Step, label: "制作方案", sub: "Plan" },
+  { n: 2 as Step, label: "选立意", sub: "Direction" },
+  { n: 3 as Step, label: "生成中", sub: "Pipeline" },
+  { n: 4 as Step, label: "制作方案", sub: "Plan" },
 ]
 
 export default function Stepper({ current, onStep }: Props) {
