@@ -271,6 +271,7 @@ curl -N -X POST http://localhost:8080/api/generate \
 | POST | `/api/refine` | Bearer | `{plan, fromStage, only, note}` | SSE | 从某阶段重跑（人机协作）；**不存历史** |
 | GET | `/api/history` | Bearer | — | `[Summary]` | 历史方案列表（无 DB 时返回空数组） |
 | GET | `/api/history/{id}` | Bearer | — | `Record` | 历史方案详情（无 DB 时 404） |
+| PUT | `/api/history/{id}` | Bearer | `{plan}` | `204` | 存回历史：覆盖原记录的方案（编辑/重生成后持久化；无 DB 或 id 不存在时 404） |
 | DELETE | `/api/history/{id}` | Bearer | — | `204` | 删除一条历史方案（无 DB 时 404） |
 | GET | `/api/health` | 公开 | — | `ok` | 健康检查 |
 

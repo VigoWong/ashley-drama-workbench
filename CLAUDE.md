@@ -130,7 +130,7 @@ a feedback loop rewrites.**
 - `POST /api/generate` `Brief` (+ optional `concept`) → SSE (Bearer; with `concept` skips the concept
   stage and runs from bible; persisted)
 - `POST /api/refine` `{plan,fromStage,only,note}` → SSE (Bearer; rerun via `RunFrom`; NOT persisted)
-- `GET /api/history` / `GET /api/history/{id}` / `DELETE /api/history/{id}` (Bearer; empty/404 without DB)
+- `GET /api/history` / `GET /api/history/{id}` / `PUT /api/history/{id}` `{plan}` (存回历史:覆盖记录) / `DELETE /api/history/{id}` (Bearer; empty/404 without DB)
 - `GET /api/health` (open)
 
 ### Conventions when extending
