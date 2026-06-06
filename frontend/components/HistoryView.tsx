@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { HistoryRecord, HistorySummary } from "@/lib/types"
 import { listHistory, getHistory, deleteHistory } from "@/lib/history"
-import { UnauthorizedError } from "@/lib/api"
+import { refine, UnauthorizedError } from "@/lib/api"
 import PlanView from "@/components/PlanView"
 
 interface Props {
@@ -30,6 +30,7 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
   const [detail, setDetail] = useState<HistoryRecord | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [refining, setRefining] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -90,6 +91,30 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
     }
   }
 
+  // onRefine 对历史方案的某一段做重生成(复用 /api/refine)。注意:refine 不入库,
+  // 因此这里只更新当前查看的方案(交互草稿),不会改写已保存的历史记录。
+  async function onRefine(fromStage: string, only: boolean, note: string) {
+    if (!detail || refining) return
+    setRefining(true)
+    setError(null)
+    try {
+      await refine({ plan: detail.plan, fromStage, only, note }, (e) => {
+        const np = e.plan
+        if (e.type === "complete" && np) {
+          setDetail((d) => (d ? { ...d, plan: np } : d))
+        }
+      })
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized()
+        return
+      }
+      setError(err instanceof Error ? err.message : "重跑失败")
+    } finally {
+      setRefining(false)
+    }
+  }
+
   /* ---- Detail view ---- */
   if (detail) {
     return (
@@ -99,14 +124,25 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
             历史方案 · 共 {detail.plan.episodes?.length ?? 0} 集 · 生成于{" "}
             {formatTime(detail.createdAt)}
           </p>
-          <button
-            onClick={() => setDetail(null)}
-            className="rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
-          >
-            ← 返回列表
-          </button>
+          <div className="flex items-center gap-3">
+            {refining && (
+              <span className="font-mono text-xs text-ember-300">正在重跑该段…</span>
+            )}
+            <button
+              onClick={() => setDetail(null)}
+              disabled={refining}
+              className="rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700 disabled:opacity-50"
+            >
+              ← 返回列表
+            </button>
+          </div>
         </div>
-        <PlanView plan={detail.plan} />
+        {error && (
+          <div className="rounded-xl border border-signal-stop/40 bg-signal-stop/10 p-4">
+            <p className="font-mono text-sm text-signal-stop">✕ {error}</p>
+          </div>
+        )}
+        <PlanView plan={detail.plan} onRefine={onRefine} />
       </div>
     )
   }
