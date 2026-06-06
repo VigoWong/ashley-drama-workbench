@@ -81,6 +81,31 @@ func TestRoundTrip(t *testing.T) {
 		t.Errorf("get brief genre = %q, want 测试题材", rec.Brief.Requirement)
 	}
 
+	// Update overwrites the stored plan + refreshes title/episodes; brief stays.
+	plan.Bible.Title = "改后的剧名"
+	plan.Episodes = []model.Episode{{Number: 1}, {Number: 2}, {Number: 3}}
+	ok, err := s.Update(id, plan)
+	if err != nil {
+		t.Fatalf("update: %v", err)
+	}
+	if !ok {
+		t.Fatal("update: expected row to be updated")
+	}
+	rec2, err := s.Get(id)
+	if err != nil {
+		t.Fatalf("get after update: %v", err)
+	}
+	if rec2.Plan.Bible.Title != "改后的剧名" || len(rec2.Plan.Episodes) != 3 {
+		t.Errorf("update not persisted: title=%q episodes=%d", rec2.Plan.Bible.Title, len(rec2.Plan.Episodes))
+	}
+	if rec2.Brief.Requirement != "测试题材" {
+		t.Errorf("update must not change brief: requirement=%q", rec2.Brief.Requirement)
+	}
+	// Updating a missing id returns (false, nil).
+	if upd, err := s.Update("does-not-exist", plan); err != nil || upd {
+		t.Fatalf("update missing: got (%v, %v), want (false, nil)", upd, err)
+	}
+
 	// Non-existent id returns (nil, nil).
 	missing, err := s.Get("does-not-exist")
 	if err != nil {

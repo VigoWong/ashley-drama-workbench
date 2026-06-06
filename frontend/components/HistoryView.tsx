@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { HistoryRecord, HistorySummary } from "@/lib/types"
-import { listHistory, getHistory, deleteHistory } from "@/lib/history"
+import { listHistory, getHistory, deleteHistory, updateHistory } from "@/lib/history"
 import { refine, UnauthorizedError } from "@/lib/api"
 import PlanView from "@/components/PlanView"
 
@@ -31,6 +31,8 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
   const [detailLoading, setDetailLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [refining, setRefining] = useState(false)
+  const [dirty, setDirty] = useState(false) // 当前查看的方案有未存回的改动
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -62,6 +64,7 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
     try {
       const rec = await getHistory(id)
       setDetail(rec)
+      setDirty(false)
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         onUnauthorized()
@@ -91,8 +94,8 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
     }
   }
 
-  // onRefine 对历史方案的某一段做重生成(复用 /api/refine)。注意:refine 不入库,
-  // 因此这里只更新当前查看的方案(交互草稿),不会改写已保存的历史记录。
+  // onRefine 对历史方案的某一段做重生成(复用 /api/refine)。refine 本身不入库,
+  // 改动先落在当前查看的草稿上并标记 dirty,由用户点「存回历史」再持久化。
   async function onRefine(fromStage: string, only: boolean, note: string) {
     if (!detail || refining) return
     setRefining(true)
@@ -102,6 +105,7 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
         const np = e.plan
         if (e.type === "complete" && np) {
           setDetail((d) => (d ? { ...d, plan: np } : d))
+          setDirty(true)
         }
       })
     } catch (err) {
@@ -115,6 +119,41 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
     }
   }
 
+  // saveBack 把当前草稿「存回历史」:覆盖原记录,并同步列表里的标题/集数。
+  async function saveBack() {
+    if (!detail || saving || refining || !dirty) return
+    setSaving(true)
+    setError(null)
+    try {
+      await updateHistory(detail.id, detail.plan)
+      setDirty(false)
+      setItems((prev) =>
+        prev
+          ? prev.map((it) =>
+              it.id === detail.id
+                ? { ...it, title: detail.plan.bible.title, episodes: detail.plan.episodes?.length ?? it.episodes }
+                : it
+            )
+          : prev
+      )
+    } catch (err) {
+      if (err instanceof UnauthorizedError) {
+        onUnauthorized()
+        return
+      }
+      setError(err instanceof Error ? err.message : "保存失败")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // 离开详情页;若有未保存改动先确认。
+  function closeDetail() {
+    if (dirty && !window.confirm("有未存回的改动,确定离开?未保存的修改会丢失。")) return
+    setDetail(null)
+    setDirty(false)
+  }
+
   /* ---- Detail view ---- */
   if (detail) {
     return (
@@ -123,14 +162,26 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
           <p className="font-mono text-xs text-bone-400">
             历史方案 · 共 {detail.plan.episodes?.length ?? 0} 集 · 生成于{" "}
             {formatTime(detail.createdAt)}
+            {dirty && <span className="ml-2 text-ember-400">· 有未存回的改动</span>}
           </p>
           <div className="flex items-center gap-2">
             {refining && (
               <span className="font-mono text-xs text-ember-300">正在重跑该段…</span>
             )}
             <button
-              onClick={() => setDetail(null)}
-              disabled={refining}
+              onClick={saveBack}
+              disabled={!dirty || saving || refining}
+              className={`rounded-lg border px-4 py-2 font-mono text-xs uppercase tracking-wider transition disabled:opacity-50 ${
+                dirty
+                  ? "border-ember-500/60 bg-ember-500/15 text-ember-200 hover:bg-ember-500/25"
+                  : "border-bone-500/20 bg-ink-800 text-bone-300"
+              }`}
+            >
+              {saving ? "保存中…" : dirty ? "💾 存回历史" : "✓ 已保存"}
+            </button>
+            <button
+              onClick={closeDetail}
+              disabled={refining || saving}
               className="rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700 disabled:opacity-50"
             >
               ← 返回列表
@@ -144,7 +195,10 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
         )}
         <PlanView
           plan={detail.plan}
-          onChange={(p) => setDetail((d) => (d ? { ...d, plan: p } : d))}
+          onChange={(p) => {
+            setDetail((d) => (d ? { ...d, plan: p } : d))
+            setDirty(true)
+          }}
           onRefine={onRefine}
         />
       </div>

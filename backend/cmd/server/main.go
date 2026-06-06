@@ -51,6 +51,7 @@ func main() {
 	r.With(a.Middleware).Post("/api/refine", handleRefine)
 	r.With(a.Middleware).Get("/api/history", handleHistoryList)
 	r.With(a.Middleware).Get("/api/history/{id}", handleHistoryGet)
+	r.With(a.Middleware).Put("/api/history/{id}", handleHistoryUpdate)
 	r.With(a.Middleware).Delete("/api/history/{id}", handleHistoryDelete)
 	r.Get("/api/health", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
 
@@ -254,6 +255,34 @@ func handleHistoryGet(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, rec)
 }
 
+// handleHistoryUpdate overwrites a stored plan in place (「存回历史」). It takes
+// `{plan}` and refreshes the saved record's plan + denormalized title/episodes;
+// the original brief / created_at are kept. 404 when the id no longer exists.
+func handleHistoryUpdate(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	var body struct {
+		Plan model.Plan `json:"plan"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	ok, err := db.Update(chi.URLParam(r, "id"), &body.Plan)
+	if err != nil {
+		log.Printf("history: update failed: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func handleHistoryDelete(w http.ResponseWriter, r *http.Request) {
 	if db == nil {
 		http.Error(w, "not found", http.StatusNotFound)
@@ -276,7 +305,7 @@ func writeJSON(w http.ResponseWriter, status int, body any) {
 func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)

@@ -32,3 +32,15 @@ export async function deleteHistory(id: string): Promise<void> {
   if (res.status === 401) throw new UnauthorizedError()
   if (!res.ok && res.status !== 204) throw new Error(`删除失败 (${res.status})`)
 }
+
+// updateHistory 把编辑/重生成后的方案「存回历史」(覆盖原记录的 plan)。
+export async function updateHistory(id: string, plan: unknown): Promise<void> {
+  const res = await fetch(`${API}/api/history/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify({ plan }),
+  })
+  if (res.status === 401) throw new UnauthorizedError()
+  if (res.status === 404) throw new Error("该方案不存在或已被删除")
+  if (!res.ok && res.status !== 204) throw new Error(`保存失败 (${res.status})`)
+}

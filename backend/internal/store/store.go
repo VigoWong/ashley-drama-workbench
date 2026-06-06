@@ -100,6 +100,28 @@ func (s *Store) Save(brief model.Brief, plan *model.Plan) (string, error) {
 	return id, nil
 }
 
+// Update overwrites the stored plan for an existing id — used by 「存回历史」 after
+// a user edits or regenerates sections in the history detail view. brief,
+// created_at and the genre label are left untouched; the denormalized
+// title/episodes columns are refreshed from the new plan. Returns false (no
+// error) when no row matches the id, so the caller can surface a 404.
+func (s *Store) Update(id string, plan *model.Plan) (bool, error) {
+	if plan == nil {
+		return false, fmt.Errorf("store: update: nil plan")
+	}
+	planJSON, err := json.Marshal(plan)
+	if err != nil {
+		return false, fmt.Errorf("store: marshal plan: %w", err)
+	}
+	const q = `UPDATE plans SET plan = $2, title = $3, episodes = $4 WHERE id = $1`
+	res, err := s.db.Exec(q, id, planJSON, plan.Bible.Title, len(plan.Episodes))
+	if err != nil {
+		return false, fmt.Errorf("store: update: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	return n > 0, nil
+}
+
 // List returns up to 100 plan summaries, newest first.
 func (s *Store) List() ([]Summary, error) {
 	const q = `SELECT id, title, genre, episodes, created_at
