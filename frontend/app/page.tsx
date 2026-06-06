@@ -246,15 +246,7 @@ export default function Home() {
               </>
             )}
           </div>
-          <div className="flex items-center gap-4 sm:flex-col sm:items-end">
-            {!compact && (
-              <div className="hidden text-right sm:block">
-                <span className="label-tech">画幅</span>
-                <div className="ml-auto mt-1 flex h-20 w-12 items-center justify-center rounded-md border border-bone-500/20 bg-ink-800">
-                  <span className="font-mono text-[10px] text-bone-400">9:16</span>
-                </div>
-              </div>
-            )}
+          <div className="flex items-center sm:items-end">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setView("history")}
