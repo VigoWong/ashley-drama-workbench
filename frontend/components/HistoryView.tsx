@@ -179,8 +179,8 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                 {it.genre && (
-                  <span className="font-mono text-xs text-bone-300">
-                    题材 · {it.genre}
+                  <span className="line-clamp-1 max-w-[60ch] font-mono text-xs text-bone-300">
+                    需求 · {it.genre}
                   </span>
                 )}
                 <span className="font-mono text-[11px] text-bone-400">

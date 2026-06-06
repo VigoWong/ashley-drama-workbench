@@ -1,4 +1,4 @@
-import { Brief, Concept, ProposeResp, RefineReq, SSEvent } from "./types"
+import { Brief, BriefImage, Concept, ProposeResp, RefineReq, SSEvent } from "./types"
 import { getToken } from "./auth"
 
 const API = process.env.NEXT_PUBLIC_API ?? "http://localhost:8080"
@@ -43,6 +43,30 @@ async function streamSSE(
       if (line) onEvent(JSON.parse(line.slice(6)) as SSEvent)
     }
   }
+}
+
+// assist powers the 提示词助手「AI 扩写/优化」button: it sends the user's rough
+// requirement (plus pacing context) and gets back one complete, polished 生成需求
+// string to pre-fill the textarea. Plain JSON, not SSE.
+export async function assist(
+  requirement: string,
+  episodes: number,
+  episodeSecs: number,
+  images?: BriefImage[]
+): Promise<string> {
+  const token = getToken()
+  const res = await fetch(`${API}/api/assist`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ requirement, episodes, episodeSecs, images }),
+  })
+  if (res.status === 401) throw new UnauthorizedError()
+  if (!res.ok) throw new Error(`AI 扩写失败 (${res.status})`)
+  const data = (await res.json()) as { requirement: string }
+  return data.requirement ?? ""
 }
 
 // propose asks the backend for 2-3 candidate 立意方向 for a brief (plain JSON, not

@@ -167,11 +167,19 @@ func (g *Gemini) once(ctx context.Context, prompt string, images []model.Image) 
 	// for both AI Studio and Vertex.
 	parts := make([]geminiPart, 0, len(images)+1)
 	parts = append(parts, geminiPart{Text: prompt})
+	attached := 0
 	for _, img := range images {
 		if img.Data == "" {
 			continue
 		}
 		parts = append(parts, geminiPart{InlineData: &inlineData{MimeType: img.MimeType, Data: img.Data}})
+		attached++
+	}
+	// When reference images are attached, drop the temperature so the model
+	// anchors its output to what it actually sees in the image instead of
+	// free-associating at temp 0.9 (which makes the image's influence invisible).
+	if attached > 0 {
+		cfg.Temperature = 0.45
 	}
 	body, _ := json.Marshal(geminiReq{
 		Contents:         []geminiContent{{Role: "user", Parts: parts}},

@@ -45,6 +45,7 @@ func main() {
 	}
 
 	r.Post("/api/login", a.LoginHandler)
+	r.With(a.Middleware).Post("/api/assist", handleAssist)
 	r.With(a.Middleware).Post("/api/propose", handlePropose)
 	r.With(a.Middleware).Post("/api/generate", handleGenerate)
 	r.With(a.Middleware).Post("/api/refine", handleRefine)
@@ -59,6 +60,34 @@ func main() {
 	}
 	log.Printf("listening on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
+}
+
+// assistRequest is the body for /api/assist: a rough idea plus optional pacing
+// context. episodes/episodeSecs only flavor the expansion; they are not required.
+type assistRequest struct {
+	Requirement string        `json:"requirement"`
+	Episodes    int           `json:"episodes"`
+	EpisodeSecs int           `json:"episodeSecs"`
+	Images      []model.Image `json:"images"` // optional reference materials to ground the expansion
+}
+
+// handleAssist powers the front-end 提示词助手: it expands/polishes the user's
+// rough idea into one complete 中文生成需求 and returns it as plain JSON
+// {"requirement": "..."}. Cheap (one LLM round-trip), not streamed, not persisted.
+func handleAssist(w http.ResponseWriter, r *http.Request) {
+	var req assistRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	provider, _ := llm.FromEnv()
+	out, err := agent.Assist(r.Context(), provider, req.Requirement, req.Episodes, req.EpisodeSecs, req.Images)
+	if err != nil {
+		log.Printf("assist error: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"requirement": out})
 }
 
 // handlePropose returns 2-3 candidate 立意方向 for a brief as plain JSON (NOT SSE):
