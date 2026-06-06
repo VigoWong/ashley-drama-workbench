@@ -2,11 +2,28 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/ashley/drama-workbench/internal/llm"
 	"github.com/ashley/drama-workbench/internal/model"
 )
+
+// flakyProvider fails the first failFirst calls, then delegates to inner.
+// It models a transient LLM hiccup so we can assert stage-level retry recovers.
+type flakyProvider struct {
+	inner     llm.Provider
+	failFirst int
+	calls     int
+}
+
+func (f *flakyProvider) GenerateJSON(ctx context.Context, stage, prompt string, images []model.Image, schema map[string]any) ([]byte, error) {
+	f.calls++
+	if f.calls <= f.failFirst {
+		return nil, fmt.Errorf("transient boom")
+	}
+	return f.inner.GenerateJSON(ctx, stage, prompt, images, schema)
+}
 
 func mockAll() *llm.Mock {
 	m := llm.NewMock()
@@ -41,5 +58,26 @@ func TestOrchestratorRunsAllStages(t *testing.T) {
 	}
 	if !complete {
 		t.Fatal("expected complete event")
+	}
+}
+
+func TestOrchestratorRetriesTransientStageFailure(t *testing.T) {
+	// First call (concept stage) fails once, then succeeds — pipeline must recover.
+	p := &flakyProvider{inner: mockAll(), failFirst: 1}
+	var errored bool
+	o := New(p, func(e model.Event) {
+		if e.Type == model.EventError {
+			errored = true
+		}
+	})
+	plan, err := o.Run(context.Background(), model.Brief{Genre: "makeover", Episodes: 2})
+	if err != nil {
+		t.Fatalf("expected recovery, got %v", err)
+	}
+	if errored {
+		t.Fatal("did not expect an error event after successful retry")
+	}
+	if plan.Concept.Logline != "L" {
+		t.Fatal("concept missing after retry")
 	}
 }
