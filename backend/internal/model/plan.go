@@ -13,9 +13,9 @@ type Brief struct {
 	Genre       string  `json:"genre"`       // e.g. "家装改造逆袭"
 	Episodes    int     `json:"episodes"`    // default 5
 	EpisodeSecs int     `json:"episodeSecs"` // default 30
-	Market      string  `json:"market"`      // fixed "US" for MVP
-	Language    string  `json:"language"`    // fixed "English" for MVP
-	BrandFocus  string  `json:"brandFocus"`  // e.g. "living room sofas, bedroom sets"
+	Market      string  `json:"market"`      // 默认 "中国"
+	Language    string  `json:"language"`    // 默认 "中文"
+	BrandFocus  string  `json:"brandFocus"`  // e.g. "客厅沙发、卧室套装"
 	Extra       string  `json:"extra"`       // free-form notes
 	Images      []Image `json:"images,omitempty"` // optional multimodal reference images
 }

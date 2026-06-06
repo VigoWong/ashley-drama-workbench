@@ -14,10 +14,10 @@ import (
 )
 
 func main() {
-	genre := flag.String("genre", "home makeover revenge", "drama genre/theme")
-	episodes := flag.Int("episodes", 12, "number of episodes")
-	secs := flag.Int("secs", 90, "seconds per episode")
-	brand := flag.String("brand", "living room & bedroom", "brand focus")
+	genre := flag.String("genre", "家装改造逆袭", "题材 / 套路")
+	episodes := flag.Int("episodes", 5, "集数")
+	secs := flag.Int("secs", 30, "单集秒数")
+	brand := flag.String("brand", "客厅沙发、卧室套装", "Ashley 品牌重点")
 	format := flag.String("format", "markdown", "output: markdown|json")
 	out := flag.String("out", "", "write to file instead of stdout")
 	flag.Parse()

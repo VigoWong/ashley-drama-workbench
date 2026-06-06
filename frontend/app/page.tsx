@@ -124,7 +124,7 @@ export default function Home() {
               <span className="text-ember-400">生产工作台</span>
             </h1>
             <p className="mt-4 max-w-md font-sans text-sm leading-relaxed text-bone-300">
-              一句需求,即可生成面向美国市场、为 Ashley 家具带货的竖屏短剧 ——
+              一句需求,即可生成面向国内市场、为 Ashley 家具带货的竖屏短剧 ——
               从立意到通告单,由多 Agent 流水线自动产出。
             </p>
           </div>
