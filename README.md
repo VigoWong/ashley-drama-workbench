@@ -1,12 +1,12 @@
 # 短剧生产工作台 · Ashley 家具品牌带货
 
-输入**一句需求**（题材、集数、单集秒数、品牌植入重点，可选参考图），多 Agent 流水线即可产出一份结构化、可直接交付编剧室与剧组的**中文短剧制作方案**。方案面向**中国国内市场**的竖屏短剧（抖音 / 快手 / 红果短剧），剧情中自然植入 **Ashley（爱室丽）家具**，把"看剧"变成"带货"。
+输入**一段生成需求**（用一句话写清题材/套路、爽点方向与 Ashley 植入重点）外加集数、单集秒数与可选参考图，多 Agent 流水线即可产出一份结构化、可直接交付编剧室与剧组的**中文短剧制作方案**。方案面向**中国国内市场**的竖屏短剧（抖音 / 快手 / 红果短剧），剧情中自然植入 **Ashley（爱室丽）家具**，把"看剧"变成"带货"。
 
 它解决的核心问题：**家具品牌如何用短剧做内容带货。** 短剧最常见的场景——爆改出租屋、离婚后重新开始、打造梦想之家——本身就发生在客厅、卧室、餐桌旁。**布景即展厅**：一张沙发不是和解戏里的道具，它就是那场戏的情绪锚点。把"情绪节点 → SKU → CTA"绑定起来，剧情卖的是情绪，CTA 卖的是商品。
 
 两个入口共用同一套编排器：
 
-- **HTTP + SSE 服务**（`backend/cmd/server`）：`/api/propose` 先产出多个立意方向，`/api/generate` 流式推送每个阶段的进度与产物，`/api/refine` 支持人机协作重跑，由 **Next.js 16 + Tailwind v4** 前端驱动。
+- **HTTP + SSE 服务**（`backend/cmd/server`）：`/api/assist` 把粗略想法（含参考图）扩写成完整需求，`/api/propose` 先产出多个立意方向，`/api/generate` 流式推送每个阶段的进度与产物，`/api/refine` 支持人机协作重跑，由 **Next.js 16 + Tailwind v4** 前端驱动。
 - **CLI**（`backend/cmd/cli`）：同一条流水线，输出 Markdown 或 JSON。
 
 > 设计文档与实现计划（历史过程产物，英文）见 [`docs/superpowers/`](docs/superpowers/)。
@@ -51,10 +51,11 @@
 
 - **登录门**：单用户 token 鉴权，默认 `admin / admin`（可经环境变量覆盖）。
 - **四步向导**：
-  1. **填需求** —— 题材、集数、单集秒数、品牌植入重点，可选参考图。
+  1. **填需求** —— 用一段话写清题材/套路、爽点与 Ashley 植入重点（再填集数、单集秒数，可选参考图）。配 **提示词助手**：一键「套用模板」、点击标签拼接，或用「AI 扩写」结合已选参考素材自动补全，仍可继续手改。
   2. **选立意** —— `/api/propose` 一次产出 **2-3 个"显著不同"的立意方向**（不同的梗概、爽点引擎、基调、核心冲突），用户挑选其一，并可**就地微调**其关键字段。
   3. **生成** —— 按选定立意，从剧集圣经阶段往下跑完整流水线，流式时间线实时展示每个阶段。
   4. **方案** —— 8 区块方案展示，可**编辑关键字段**，可对任一区块**单段重生成**或**从该段往下重跑**。
+- **提示词助手**：「填需求」步可一键套用模板、点击标签（题材/爽点/Ashley 植入）拼接，或用 **AI 扩写**（`/api/assist`）把粗略想法补全成完整中文生成需求；扩写会**结合已选参考素材**接地，仍可继续手改。
 - **多模态参考图**：6 张预设家居素材（`frontend/public/materials/`）+ 本地上传（合计 ≤ 3 张），作为参考图喂给模型，影响空间风格与家具质感。
 - **AI 分镜概念图**：Vertex 模式下用 Imagen 为系列海报 + 英雄场景生成 9:16 概念图；不支持出图的 Provider（AI Studio / Mock）优雅跳过，文字方案照常完整。
 - **真实 / 示例两种生成**：配 Key 走真实大模型；无 Key 自动降级为内置 Mock（含 propose 提案 fixture），返回一份完整可信的中文示例方案——**整套流程与测试无需任何 Key**。
@@ -68,7 +69,7 @@
 **编排器驱动的多阶段流水线。** 每个阶段 = 一个内嵌的提示词模板 + Gemini 结构化 JSON 输出，读写线程间共享的 `*PlanState`。确定性 Go 工具为大模型提供真实数据接地，并以一次性自纠正回路对 episodes 阶段**把关**。可插拔的 `Provider` 让整条链在无 Key 时也能跑、能测；可选的 `ImageProvider` 能力在 Vertex 模式下追加 AI 分镜图。
 
 ```
-   Brief {genre, episodes, episodeSecs, brandFocus, images[]}  +  登录 token
+   Brief {requirement, episodes, episodeSecs, images[]}  +  登录 token
                               │
    ┌─ POST /api/propose ─▶ Bearer 鉴权 ─▶ agent.Propose() 单次 LLM
    │     返回 {concepts:[…2-3 个立意方向…]}（纯 JSON，不流式、不入库）
@@ -214,10 +215,10 @@ make server                                  # 启动 HTTP+SSE 服务（默认 :
 make cli                                      # 跑 CLI（通过 ARGS 传参）
 make cli ARGS="-episodes 5 -format json"      # 例：5 集、JSON 输出
 make build                                    # 编译出 bin/server 与 bin/cli
-go run ./cmd/cli -genre "家装改造逆袭" -episodes 5 -secs 30 -brand "客厅沙发、卧室套装"
+go run ./cmd/cli -req "做一部家装改造逆袭题材的竖屏短剧，主打逆袭打脸；重点植入 Ashley 客厅沙发、卧室套装" -episodes 5 -secs 30
 ```
 
-> CLI 默认值（`backend/cmd/cli/main.go`）已是中文：`-genre "家装改造逆袭"`、`-episodes 5`、`-secs 30`、`-brand "客厅沙发、卧室套装"`、`-format markdown`；可用 `-out <file>` 写文件。注意 CLI 只跑全量 `Run`（从立意起），不经 propose 选型。
+> CLI 默认值（`backend/cmd/cli/main.go`）已是中文：`-req`（一段完整的「家装改造逆袭」生成需求）、`-episodes 5`、`-secs 30`、`-format markdown`；可用 `-out <file>` 写文件。注意 CLI 只跑全量 `Run`（从立意起），不经 propose 选型 / assist 扩写。
 
 调用流式接口（需先登录拿 token）：
 
@@ -231,13 +232,13 @@ curl -s -X POST http://localhost:8080/api/login \
 curl -s -X POST http://localhost:8080/api/propose \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"genre":"家装改造逆袭","episodes":5,"episodeSecs":30,"brandFocus":"客厅沙发、卧室套装"}'
+  -d '{"requirement":"做一部家装改造逆袭题材的竖屏短剧，主打逆袭打脸；重点植入 Ashley 客厅沙发、卧室套装","episodes":5,"episodeSecs":30}'
 
 # 3) 带 Bearer token 调用生成（可在 body 里加 "concept":{…} 跳过立意从 bible 起）
 curl -N -X POST http://localhost:8080/api/generate \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{"genre":"家装改造逆袭","episodes":5,"episodeSecs":30,"brandFocus":"客厅沙发、卧室套装"}'
+  -d '{"requirement":"做一部家装改造逆袭题材的竖屏短剧，主打逆袭打脸；重点植入 Ashley 客厅沙发、卧室套装","episodes":5,"episodeSecs":30}'
 ```
 
 会看到一串 `stage_start` / `stage_done` 事件，以一个携带完整方案的 `complete` 事件收尾。
@@ -247,11 +248,13 @@ curl -N -X POST http://localhost:8080/api/generate \
 | 方法 | 路径 | 鉴权 | 请求体 | 响应 | 说明 |
 |------|------|------|--------|------|------|
 | POST | `/api/login` | 公开 | `{username, password}` | `{token}` | 校验账密，发随机会话 token |
+| POST | `/api/assist` | Bearer | `{requirement, episodes, episodeSecs, images}` | `{requirement}` | 提示词助手：把粗略想法（可带参考图）扩写成完整中文需求（纯 JSON，不流式、不入库） |
 | POST | `/api/propose` | Bearer | `Brief` | `{concepts:[…2-3…]}` | 产出多个立意方向（纯 JSON，不流式、不入库） |
 | POST | `/api/generate` | Bearer | `Brief`（可选 `concept`） | SSE | 流式生成方案；带 `concept` 则从 bible 起；**存历史** |
 | POST | `/api/refine` | Bearer | `{plan, fromStage, only, note}` | SSE | 从某阶段重跑（人机协作）；**不存历史** |
 | GET | `/api/history` | Bearer | — | `[Summary]` | 历史方案列表（无 DB 时返回空数组） |
 | GET | `/api/history/{id}` | Bearer | — | `Record` | 历史方案详情（无 DB 时 404） |
+| DELETE | `/api/history/{id}` | Bearer | — | `204` | 删除一条历史方案（无 DB 时 404） |
 | GET | `/api/health` | 公开 | — | `ok` | 健康检查 |
 
 ### 6.3 前端
@@ -298,7 +301,7 @@ cd backend && go test ./...
 
 ```
 backend/
-  cmd/server/main.go        HTTP + SSE 服务：登录、鉴权中间件、propose、generate、refine、历史、健康检查
+  cmd/server/main.go        HTTP + SSE 服务：登录、鉴权中间件、assist、propose、generate、refine、历史（含删除）、健康检查
   cmd/cli/main.go           复用同一编排器的 CLI（markdown/json 输出，默认中文题材）
   internal/
     model/plan.go           领域模型：Brief / Plan / Concept / Episode / Image / Visual ... 及默认值
@@ -310,11 +313,12 @@ backend/
     tools/tropes.go         GetWinningTropes：中文家居题材库
     tools/catalog.go        GetProductCatalog：Ashley SKU 库
     tools/pacing.go         ValidatePacing：纯 Go 节奏校验闸门
-    prompts/*.tmpl          每阶段一个内嵌中文提示词模板（含 propose、episodes_refine）
+    prompts/*.tmpl          每阶段一个内嵌中文提示词模板（含 propose、episodes_refine、assist 提示词助手）
     prompts/embed.go        模板嵌入与渲染
     agent/stage.go          Stage 接口、PlanState（含 refine 的 Note）、Emitter
     agent/stages.go         8 个阶段实现 + episodes 自纠正 + VisualStage + AllStages() + IsStage()
     agent/propose.go        Propose：单次 LLM 产出 2-3 个立意方向
+    agent/assist.go         Assist：单次 LLM 把粗略想法扩写成完整生成需求（提示词助手后端，支持参考图接地）
     agent/orchestrator.go   编排器：Run / RunFrom、按序运行、单阶段重试、emit 事件
     auth/auth.go            单用户 token 鉴权（LoginHandler + Bearer 中间件）
     store/store.go          Postgres 持久化（plans 表，brief/plan 存 jsonb）
@@ -325,14 +329,14 @@ docker-compose.yml          Postgres（持久化）+ 可选 Adminer
 frontend/
   app/page.tsx              工作台主页：登录门 + 四步向导（填需求→选立意→生成→方案）+ 历史切换
   components/LoginForm.tsx  登录表单
-  components/InputForm.tsx  需求表单 + 参考素材（预设 + 上传，≤3 张）
+  components/InputForm.tsx  需求表单（含提示词助手：模板 / 标签 / AI 扩写）+ 参考素材（预设 + 上传，≤3 张）
   components/ConceptChoice.tsx  第 2 步：2-3 个立意方向选型卡片（单选 + 就地微调）
   components/StageTimeline.tsx  SSE 实时阶段时间线（可展开原始输出）
   components/PlanView.tsx   8 区块方案展示 + 字段编辑 + 单段重生成 / 从本段往下重跑
   components/ExportBar.tsx  JSON / Markdown 导出
   components/HistoryView.tsx  历史列表与详情
   components/Stepper.tsx    四步进度指示
-  lib/api.ts               propose / generate / refine、SSE 解析、UnauthorizedError
+  lib/api.ts               assist / propose / generate / refine、SSE 解析、UnauthorizedError
   lib/auth.ts              登录、token 存取
   lib/history.ts           历史列表/详情接口
   lib/materials.ts         6 张预设家居素材定义

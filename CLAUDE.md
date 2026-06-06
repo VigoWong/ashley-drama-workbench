@@ -21,7 +21,7 @@ go test ./internal/tools/ -run TestPacingMissingHookFails   # single test
 go test ./internal/agent/ -v               # one package, verbose
 make server                                # HTTP + SSE on :8080 (PORT overrides)
 make cli ARGS="-episodes 5 -format json"   # CLI; pass flags via ARGS
-go run ./cmd/cli -genre "家装改造逆袭" -episodes 5 -secs 30   # run CLI directly (defaults are already Chinese: 家装改造逆袭 / 5 / 30)
+go run ./cmd/cli -req "家装改造逆袭，主打逆袭打脸，植入 Ashley 客厅沙发" -episodes 5 -secs 30   # run CLI directly (-req defaults to a full Chinese requirement)
 make build                                 # builds bin/server and bin/cli
 ```
 
@@ -111,22 +111,26 @@ a feedback loop rewrites.**
   + `ErrImagesUnsupported`. Gemini and Mock/DemoMock implement both (Mock's GenerateImage always
   reports unsupported).
 - **Persistence** (`internal/store/store.go`): single `plans` table (id, created_at, genre, title,
-  episodes, brief jsonb, plan jsonb). Server saves asynchronously after `/api/generate` streams out.
-  Refines are NOT persisted (interactive drafts).
+  episodes, brief jsonb, plan jsonb — the `genre` column name is kept to avoid a migration and now
+  holds a truncated `Brief.Requirement` snippet used only as the history-list label). Server saves
+  asynchronously after `/api/generate` streams out. Refines are NOT persisted (interactive drafts).
 - **Auth** (`internal/auth/auth.go`): `/api/login` returns a random in-memory token; a Bearer
-  middleware guards `/api/propose`, `/api/generate`, `/api/refine`, `/api/history`,
-  `/api/history/{id}`. `/api/health` is open. Default creds admin/admin (`AUTH_USERNAME`/`AUTH_PASSWORD`).
-- **Two surfaces, one orchestrator**: `cmd/server` (HTTP+SSE: propose/generate/refine/history) and
-  `cmd/cli` (full `Run` only) both call `agent.New(provider, emit)`.
+  middleware guards `/api/assist`, `/api/propose`, `/api/generate`, `/api/refine`, `/api/history`,
+  `/api/history/{id}` (GET + DELETE). `/api/health` is open. Default creds admin/admin
+  (`AUTH_USERNAME`/`AUTH_PASSWORD`).
+- **Two surfaces, one orchestrator**: `cmd/server` (HTTP+SSE: assist/propose/generate/refine/history)
+  and `cmd/cli` (full `Run` only) both call `agent.New(provider, emit)`.
 
 ### HTTP endpoints (`cmd/server/main.go`)
 
 - `POST /api/login` `{username,password}` → `{token}` (open)
+- `POST /api/assist` `{requirement,episodes,episodeSecs,images}` → `{requirement}` (Bearer; plain
+  JSON, not SSE; expands a rough idea into one full 中文需求; image-aware; not persisted)
 - `POST /api/propose` `Brief` → `{concepts:[…2-3…]}` (Bearer; plain JSON, not SSE; not persisted)
 - `POST /api/generate` `Brief` (+ optional `concept`) → SSE (Bearer; with `concept` skips the concept
   stage and runs from bible; persisted)
 - `POST /api/refine` `{plan,fromStage,only,note}` → SSE (Bearer; rerun via `RunFrom`; NOT persisted)
-- `GET /api/history` / `GET /api/history/{id}` (Bearer; empty/404 without DB)
+- `GET /api/history` / `GET /api/history/{id}` / `DELETE /api/history/{id}` (Bearer; empty/404 without DB)
 - `GET /api/health` (open)
 
 ### Conventions when extending
@@ -145,8 +149,13 @@ a feedback loop rewrites.**
 
 ### Notes
 
-- `cmd/cli` runs the full `Run` only (no propose / refine). Flag defaults are Chinese
-  (`-genre 家装改造逆袭 -episodes 5 -secs 30 -brand "客厅沙发、卧室套装"`); `-format markdown|json`, `-out <file>`.
+- **`Brief` uses a single `Requirement` string** — the former `Genre` + `BrandFocus` were merged
+  into one free-text 生成需求 paragraph (`internal/model/plan.go`). The front-end 提示词助手 lets
+  users scaffold it from template/chips or expand it via `POST /api/assist` (`internal/agent/assist.go`,
+  `internal/prompts/assist.tmpl`), which is image-aware (reuses the same multimodal anchoring as
+  propose/generate). Assist is server-only (no CLI path).
+- `cmd/cli` runs the full `Run` only (no propose / refine / assist). Flag defaults are Chinese
+  (`-req "<一段完整需求>" -episodes 5 -secs 30`); `-format markdown|json`, `-out <file>`.
 - `frontend/lib/types.ts` `Brief` intentionally omits `language` (server defaults it); the mirror
   is deliberately partial there.
 - Imagen renders in-image Chinese text poorly, so visuals prompts request "no text/watermark/logo".
