@@ -122,22 +122,11 @@ function RefineBar({
         >
           ↻ 重生成本段
         </button>
-        <button
-          onClick={() => toggle(false)}
-          title="从本段开始，往下所有阶段重跑"
-          className={`rounded-lg border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition ${
-            openOnly === false
-              ? "border-ember-500/60 bg-ember-500/15 text-ember-200"
-              : "border-bone-500/20 text-bone-300 hover:border-ember-400/50 hover:text-ember-400"
-          }`}
-        >
-          ⏬ 从此往下重跑
-        </button>
       </div>
       {openOnly !== null && (
         <div className="flex w-full max-w-md flex-col gap-2 rounded-lg border border-ember-500/25 bg-ink-900/60 p-3">
           <span className="label-tech">
-            {openOnly ? "仅重生成本段" : "从本段往下重跑"} · 额外要求（可空）
+            仅重生成本段 · 额外要求（可空）
           </span>
           <textarea
             value={note}
