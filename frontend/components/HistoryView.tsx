@@ -31,7 +31,6 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
   const [detailLoading, setDetailLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [refining, setRefining] = useState(false)
-  const [editing, setEditing] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -63,7 +62,6 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
     try {
       const rec = await getHistory(id)
       setDetail(rec)
-      setEditing(false)
     } catch (err) {
       if (err instanceof UnauthorizedError) {
         onUnauthorized()
@@ -125,30 +123,13 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
           <p className="font-mono text-xs text-bone-400">
             历史方案 · 共 {detail.plan.episodes?.length ?? 0} 集 · 生成于{" "}
             {formatTime(detail.createdAt)}
-            {editing && (
-              <span className="ml-2 text-ember-400">· 编辑中（改动仅本地草稿，不写回历史）</span>
-            )}
           </p>
           <div className="flex items-center gap-2">
             {refining && (
               <span className="font-mono text-xs text-ember-300">正在重跑该段…</span>
             )}
             <button
-              onClick={() => setEditing((v) => !v)}
-              disabled={refining}
-              className={`rounded-lg border px-4 py-2 font-mono text-xs uppercase tracking-wider transition disabled:opacity-50 ${
-                editing
-                  ? "border-ember-500/60 bg-ember-500/15 text-ember-200"
-                  : "border-bone-500/20 bg-ink-800 text-bone-100 hover:border-ember-400/50 hover:text-ember-400"
-              }`}
-            >
-              {editing ? "✓ 完成" : "✎ 编辑"}
-            </button>
-            <button
-              onClick={() => {
-                setDetail(null)
-                setEditing(false)
-              }}
+              onClick={() => setDetail(null)}
               disabled={refining}
               className="rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700 disabled:opacity-50"
             >
@@ -163,7 +144,6 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
         )}
         <PlanView
           plan={detail.plan}
-          editable={editing}
           onChange={(p) => setDetail((d) => (d ? { ...d, plan: p } : d))}
           onRefine={onRefine}
         />

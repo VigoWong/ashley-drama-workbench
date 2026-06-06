@@ -41,8 +41,6 @@ export default function Home() {
   const [concepts, setConcepts] = useState<Concept[]>([])
   // proposing: loading state while step 2 fetches directions.
   const [proposing, setProposing] = useState(false)
-  // editing: whether step-3 fields are editable (draft mode).
-  const [editing, setEditing] = useState(false)
   // timelineStages: which stages the StageTimeline shows. Full set for a fresh
   // generate; only the reran subset during a refine.
   const [timelineStages, setTimelineStages] = useState<string[]>(STAGES)
@@ -83,7 +81,6 @@ export default function Home() {
     setPlan(null)
     setConcepts([])
     setProposing(false)
-    setEditing(false)
     setFailed(null)
   }
 
@@ -93,7 +90,6 @@ export default function Home() {
     setLastBrief(brief)
     setEvents([])
     setPlan(null)
-    setEditing(false)
     setConcepts([])
     setTimelineStages(STAGES.slice(1))
     setFailed(null)
@@ -123,7 +119,6 @@ export default function Home() {
     if (!lastBrief) return
     setEvents([])
     setPlan(null)
-    setEditing(false)
     // concept is fixed, so the pipeline starts at bible → … → visuals.
     setTimelineStages(STAGES.slice(1))
     setFailed(null)
@@ -163,7 +158,6 @@ export default function Home() {
     setTimelineStages(subset)
     setEvents([])
     setFailed(null)
-    setEditing(false)
     setStep(3)
     try {
       await refine({ plan, fromStage, only, note }, (e) => {
@@ -188,7 +182,6 @@ export default function Home() {
     setStep(1)
     setEvents([])
     setPlan(null)
-    setEditing(false)
     setConcepts([])
     setTimelineStages(STAGES)
     setFailed(null)
@@ -335,19 +328,8 @@ export default function Home() {
             <div className="flex items-center justify-between gap-3">
               <p className="font-mono text-xs text-bone-400">
                 方案已生成 · 共 {plan.episodes?.length ?? 0} 集
-                {editing && <span className="ml-2 text-ember-400">· 编辑中（改动仅本地草稿）</span>}
               </p>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setEditing((v) => !v)}
-                  className={`rounded-lg border px-4 py-2 font-mono text-xs uppercase tracking-wider transition ${
-                    editing
-                      ? "border-ember-500/60 bg-ember-500/15 text-ember-200"
-                      : "border-bone-500/20 bg-ink-800 text-bone-100 hover:border-ember-400/50 hover:text-ember-400"
-                  }`}
-                >
-                  {editing ? "✓ 完成" : "✎ 编辑"}
-                </button>
                 <button
                   onClick={restart}
                   className="rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
@@ -359,7 +341,6 @@ export default function Home() {
             <ExportBar plan={plan} />
             <PlanView
               plan={plan}
-              editable={editing}
               onChange={setPlan}
               onRefine={onRefine}
             />

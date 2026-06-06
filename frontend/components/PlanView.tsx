@@ -5,7 +5,6 @@ import { Plan } from "@/lib/types"
 
 interface Props {
   plan: Plan
-  editable?: boolean
   onChange?: (plan: Plan) => void
   onRefine?: (fromStage: string, only: boolean, note: string) => void
 }
@@ -14,12 +13,12 @@ interface Props {
 const FIELD =
   "w-full rounded-lg border border-bone-500/20 bg-ink-900/60 px-3 py-2 font-sans text-sm text-bone-50 outline-none transition focus:border-ember-500/70 focus:ring-2 focus:ring-ember-500/20"
 
-export default function PlanView({ plan, editable = false, onChange, onRefine }: Props) {
+export default function PlanView({ plan, onChange, onRefine }: Props) {
   // update merges a partial patch into the plan and bubbles it to the parent.
   function update(patch: Partial<Plan>) {
     onChange?.({ ...plan, ...patch })
   }
-  const shared = { plan, editable, update, onRefine }
+  const shared = { plan, update, onRefine }
   return (
     <div className="space-y-10">
       <Masthead plan={plan} />
@@ -38,7 +37,6 @@ export default function PlanView({ plan, editable = false, onChange, onRefine }:
 
 interface SectionProps {
   plan: Plan
-  editable: boolean
   update: (patch: Partial<Plan>) => void
   onRefine?: (fromStage: string, only: boolean, note: string) => void
 }
@@ -166,12 +164,16 @@ function SectionHead({
   title,
   stage,
   onRefine,
+  editing,
+  onToggleEdit,
 }: {
   no: string
   kicker: string
   title: string
   stage?: string
   onRefine?: (fromStage: string, only: boolean, note: string) => void
+  editing?: boolean
+  onToggleEdit?: () => void
 }) {
   return (
     <div className="mb-5 flex items-start justify-between gap-4 border-b border-bone-500/15 pb-3">
@@ -182,7 +184,21 @@ function SectionHead({
           <h2 className="font-display text-2xl font-semibold tracking-tight">{title}</h2>
         </div>
       </div>
-      {stage && <RefineBar stage={stage} onRefine={onRefine} />}
+      <div className="flex items-center gap-2">
+        {onToggleEdit && (
+          <button
+            onClick={onToggleEdit}
+            className={`rounded-lg border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition ${
+              editing
+                ? "border-ember-500/60 bg-ember-500/15 text-ember-200"
+                : "border-bone-500/20 text-bone-300 hover:border-ember-400/50 hover:text-ember-400"
+            }`}
+          >
+            {editing ? "✓ 完成" : "✎ 编辑"}
+          </button>
+        )}
+        {stage && <RefineBar stage={stage} onRefine={onRefine} />}
+      </div>
     </div>
   )
 }
@@ -278,7 +294,8 @@ function VisualsSection({ plan, onRefine }: SectionProps) {
 
 /* ---------- 01 Concept ---------- */
 
-function ConceptSection({ plan, editable, update, onRefine }: SectionProps) {
+function ConceptSection({ plan, update, onRefine }: SectionProps) {
+  const [editable, setEditable] = useState(false)
   const c = plan.concept
   function patch(field: keyof typeof c, v: string) {
     update({ concept: { ...c, [field]: v } })
@@ -291,7 +308,7 @@ function ConceptSection({ plan, editable, update, onRefine }: SectionProps) {
   ]
   return (
     <section>
-      <SectionHead no="01" kicker="创意北极星" title="立意" stage="concept" onRefine={onRefine} />
+      <SectionHead no="01" kicker="创意北极星" title="立意" stage="concept" onRefine={onRefine} editing={editable} onToggleEdit={() => setEditable((v) => !v)} />
       {editable && (
         <div className="panel mb-5 rounded-xl p-4">
           <span className="label-tech">Logline</span>
@@ -334,14 +351,15 @@ function ConceptSection({ plan, editable, update, onRefine }: SectionProps) {
 
 /* ---------- 02 Series Bible ---------- */
 
-function BibleSection({ plan, editable, update, onRefine }: SectionProps) {
+function BibleSection({ plan, update, onRefine }: SectionProps) {
+  const [editable, setEditable] = useState(false)
   const b = plan.bible
   function patch(field: keyof typeof b, v: string) {
     update({ bible: { ...b, [field]: v } })
   }
   return (
     <section>
-      <SectionHead no="02" kicker="形态契约" title="剧集圣经" stage="bible" onRefine={onRefine} />
+      <SectionHead no="02" kicker="形态契约" title="剧集圣经" stage="bible" onRefine={onRefine} editing={editable} onToggleEdit={() => setEditable((v) => !v)} />
       <div className="panel rounded-2xl p-6">
         {editable && (
           <div className="mb-4">
@@ -384,14 +402,15 @@ const ROLE_TINT: Record<string, string> = {
   "love-interest": "border-bone-300/40 text-bone-100",
 }
 
-function CharactersSection({ plan, editable, update, onRefine }: SectionProps) {
+function CharactersSection({ plan, update, onRefine }: SectionProps) {
+  const [editable, setEditable] = useState(false)
   function patch(idx: number, field: "name" | "bio" | "arc", v: string) {
     const next = plan.characters.map((c, i) => (i === idx ? { ...c, [field]: v } : c))
     update({ characters: next })
   }
   return (
     <section>
-      <SectionHead no="03" kicker="卡司阵容" title="人物" stage="characters" onRefine={onRefine} />
+      <SectionHead no="03" kicker="卡司阵容" title="人物" stage="characters" onRefine={onRefine} editing={editable} onToggleEdit={() => setEditable((v) => !v)} />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {plan.characters.map((c, idx) => (
           <article key={idx} className="panel group flex flex-col rounded-2xl p-5">
@@ -437,7 +456,8 @@ function CharactersSection({ plan, editable, update, onRefine }: SectionProps) {
 
 /* ---------- 04 Episodes ---------- */
 
-function EpisodesSection({ plan, editable, update, onRefine }: SectionProps) {
+function EpisodesSection({ plan, update, onRefine }: SectionProps) {
+  const [editable, setEditable] = useState(false)
   const [openEp, setOpenEp] = useState<number | null>(plan.episodes[0]?.number ?? null)
   function patch(idx: number, field: "title" | "synopsis" | "hook" | "cliffhanger" | "payoff", v: string) {
     const next = plan.episodes.map((e, i) => (i === idx ? { ...e, [field]: v } : e))
@@ -445,7 +465,7 @@ function EpisodesSection({ plan, editable, update, onRefine }: SectionProps) {
   }
   return (
     <section>
-      <SectionHead no="04" kicker="节拍表" title="分集" stage="episodes" onRefine={onRefine} />
+      <SectionHead no="04" kicker="节拍表" title="分集" stage="episodes" onRefine={onRefine} editing={editable} onToggleEdit={() => setEditable((v) => !v)} />
       <div className="space-y-2">
         {plan.episodes.map((e, idx) => {
           const isOpen = openEp === e.number
@@ -563,14 +583,15 @@ function Beat({
 
 /* ---------- 05 Placements ---------- */
 
-function PlacementsSection({ plan, editable, update, onRefine }: SectionProps) {
+function PlacementsSection({ plan, update, onRefine }: SectionProps) {
+  const [editable, setEditable] = useState(false)
   function patch(idx: number, field: "scene" | "emotionalBeat" | "ctaTiming", v: string) {
     const next = plan.placements.map((p, i) => (i === idx ? { ...p, [field]: v } : p))
     update({ placements: next })
   }
   return (
     <section>
-      <SectionHead no="05" kicker="品牌植入" title="Ashley 植入" stage="placements" onRefine={onRefine} />
+      <SectionHead no="05" kicker="品牌植入" title="Ashley 植入" stage="placements" onRefine={onRefine} editing={editable} onToggleEdit={() => setEditable((v) => !v)} />
       <div className="panel overflow-hidden rounded-2xl">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[64rem] border-collapse text-left">
@@ -729,7 +750,8 @@ function Stat2({ label, value }: { label: string; value: string }) {
 
 /* ---------- 08 Distribution ---------- */
 
-function DistributionSection({ plan, editable, update }: SectionProps) {
+function DistributionSection({ plan, update }: SectionProps) {
+  const [editable, setEditable] = useState(false)
   const d = plan.distribution
   function patch(field: keyof typeof d, v: string) {
     update({ distribution: { ...d, [field]: v } })
@@ -738,7 +760,7 @@ function DistributionSection({ plan, editable, update }: SectionProps) {
     <section>
       {/* Distribution shares the production_distribution stage; the rerun control
           lives on the Production section to avoid two buttons for one stage. */}
-      <SectionHead no="08" kicker="走向市场" title="分发" />
+      <SectionHead no="08" kicker="走向市场" title="分发" editing={editable} onToggleEdit={() => setEditable((v) => !v)} />
       <div className="panel rounded-2xl p-6">
         {editable ? (
           <>
