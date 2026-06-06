@@ -10,3 +10,6 @@ backend/vertex-sa.json
 **/*.env.local
 review-*.png
 verify-*.png
+
+# brainstorming visual companion
+.superpowers/
