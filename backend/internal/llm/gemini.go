@@ -186,6 +186,24 @@ func (g *Gemini) once(ctx context.Context, prompt string, images []model.Image) 
 		GenerationConfig: cfg,
 	})
 
+	data, err := g.doGenerate(ctx, body)
+	if err != nil {
+		return "", err
+	}
+	var gr geminiResp
+	if err := json.Unmarshal(data, &gr); err != nil {
+		return "", err
+	}
+	if len(gr.Candidates) == 0 || len(gr.Candidates[0].Content.Parts) == 0 {
+		return "", fmt.Errorf("gemini: empty response")
+	}
+	return gr.Candidates[0].Content.Parts[0].Text, nil
+}
+
+// doGenerate POSTs body (already JSON-encoded) to the model's :generateContent
+// endpoint, handling auth for both Vertex AI (Bearer token) and AI Studio (API
+// key query param) modes. Returns the raw response bytes on HTTP 200.
+func (g *Gemini) doGenerate(ctx context.Context, body []byte) ([]byte, error) {
 	var url string
 	if g.tokenSource != nil {
 		url = fmt.Sprintf("https://%s-aiplatform.googleapis.com/v1/projects/%s/locations/%s/publishers/google/models/%s:generateContent",
@@ -198,27 +216,20 @@ func (g *Gemini) once(ctx context.Context, prompt string, images []model.Image) 
 	if g.tokenSource != nil {
 		tok, err := g.tokenSource.Token()
 		if err != nil {
-			return "", fmt.Errorf("vertex token: %w", err)
+			return nil, fmt.Errorf("vertex token: %w", err)
 		}
 		req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
 	}
 	resp, err := g.client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 	data, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("gemini %d: %s", resp.StatusCode, truncStr(string(data)))
+		return nil, fmt.Errorf("gemini %d: %s", resp.StatusCode, truncStr(string(data)))
 	}
-	var gr geminiResp
-	if err := json.Unmarshal(data, &gr); err != nil {
-		return "", err
-	}
-	if len(gr.Candidates) == 0 || len(gr.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("gemini: empty response")
-	}
-	return gr.Candidates[0].Content.Parts[0].Text, nil
+	return data, nil
 }
 
 // imagenReq / imagenResp model Vertex AI's Imagen :predict wire format.
