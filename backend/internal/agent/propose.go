@@ -29,9 +29,9 @@ func Propose(ctx context.Context, provider llm.Provider, brief model.Brief) ([]m
 	tr := tools.GetWinningTropes(brief.Market, "home")
 	trJSON, _ := json.Marshal(tr)
 	data := map[string]any{
-		"Genre": brief.Genre, "Episodes": brief.Episodes,
-		"EpisodeSecs": brief.EpisodeSecs, "BrandFocus": brief.BrandFocus,
-		"Tropes": string(trJSON),
+		"Requirement": brief.Requirement, "Episodes": brief.Episodes,
+		"EpisodeSecs": brief.EpisodeSecs,
+		"Tropes":      string(trJSON),
 	}
 
 	prompt, err := prompts.Render("propose", data)

@@ -16,7 +16,7 @@ func TestProposeReturnsThreeConcepts(t *testing.T) {
 		{"logline":"方向三","payoffEngine":"悬疑反转"}
 	]}`)
 
-	concepts, err := Propose(context.Background(), m, model.Brief{Genre: "家装改造", Episodes: 5})
+	concepts, err := Propose(context.Background(), m, model.Brief{Requirement: "家装改造", Episodes: 5})
 	if err != nil {
 		t.Fatalf("Propose: %v", err)
 	}

@@ -11,7 +11,7 @@ import (
 func TestConceptStageWritesPlan(t *testing.T) {
 	m := llm.NewMock()
 	m.Register("concept", `{"logline":"L","theme":"T","audience":"A","tone":"warm","payoffEngine":"revenge","coreConflict":"C","tropesUsed":["x"]}`)
-	st := &PlanState{Plan: &model.Plan{Brief: model.Brief{Genre: "makeover"}}, Provider: m}
+	st := &PlanState{Plan: &model.Plan{Brief: model.Brief{Requirement: "makeover"}}, Provider: m}
 	if err := (ConceptStage{}).Run(context.Background(), st); err != nil {
 		t.Fatal(err)
 	}

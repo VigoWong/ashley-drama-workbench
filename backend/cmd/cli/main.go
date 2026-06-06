@@ -14,10 +14,9 @@ import (
 )
 
 func main() {
-	genre := flag.String("genre", "家装改造逆袭", "题材 / 套路")
+	req := flag.String("req", "做一部「家装改造逆袭」题材的竖屏短剧，主打逆袭打脸爽点；重点植入 Ashley 客厅沙发、卧室套装。", "生成需求（题材/套路 + 爽点方向 + Ashley 植入重点，一段话）")
 	episodes := flag.Int("episodes", 5, "集数")
 	secs := flag.Int("secs", 30, "单集秒数")
-	brand := flag.String("brand", "客厅沙发、卧室套装", "Ashley 品牌重点")
 	format := flag.String("format", "markdown", "output: markdown|json")
 	out := flag.String("out", "", "write to file instead of stdout")
 	flag.Parse()
@@ -33,7 +32,7 @@ func main() {
 		}
 	}
 	o := agent.New(provider, emit)
-	plan, err := o.Run(context.Background(), model.Brief{Genre: *genre, Episodes: *episodes, EpisodeSecs: *secs, BrandFocus: *brand})
+	plan, err := o.Run(context.Background(), model.Brief{Requirement: *req, Episodes: *episodes, EpisodeSecs: *secs})
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
 		os.Exit(1)

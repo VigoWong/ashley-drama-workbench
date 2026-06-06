@@ -91,7 +91,9 @@ func (s *Store) Save(brief model.Brief, plan *model.Plan) (string, error) {
 	}
 	const q = `INSERT INTO plans(id, genre, title, episodes, brief, plan)
 		VALUES ($1, $2, $3, $4, $5, $6)`
-	_, err = s.db.Exec(q, id, brief.Genre, plan.Bible.Title, len(plan.Episodes), briefJSON, planJSON)
+	// The `genre` column is just the history-list label; it now holds a short
+	// snippet of the merged 生成需求 (truncated so the list stays cheap to render).
+	_, err = s.db.Exec(q, id, truncRunes(brief.Requirement, 80), plan.Bible.Title, len(plan.Episodes), briefJSON, planJSON)
 	if err != nil {
 		return "", fmt.Errorf("store: insert: %w", err)
 	}
@@ -154,6 +156,16 @@ func (s *Store) Delete(id string) error {
 		return fmt.Errorf("store: delete: %w", err)
 	}
 	return nil
+}
+
+// truncRunes returns at most n runes of s (rune-safe so multi-byte Chinese
+// characters are never cut in half), appending an ellipsis when truncated.
+func truncRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n]) + "…"
 }
 
 // newID returns 16 random bytes hex-encoded (32 chars).

@@ -41,7 +41,7 @@ func mockAll() *llm.Mock {
 func TestOrchestratorRunsAllStages(t *testing.T) {
 	var events []model.Event
 	o := New(mockAll(), func(e model.Event) { events = append(events, e) })
-	plan, err := o.Run(context.Background(), model.Brief{Genre: "makeover", Episodes: 2})
+	plan, err := o.Run(context.Background(), model.Brief{Requirement: "makeover", Episodes: 2})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func hasComplete(events []model.Event) bool {
 
 func TestOrchestratorRunFrom(t *testing.T) {
 	// First produce a full plan so RunFrom has a populated plan to rerun against.
-	plan, err := New(mockAll(), nil).Run(context.Background(), model.Brief{Genre: "makeover", Episodes: 2})
+	plan, err := New(mockAll(), nil).Run(context.Background(), model.Brief{Requirement: "makeover", Episodes: 2})
 	if err != nil {
 		t.Fatalf("seed run: %v", err)
 	}
@@ -134,7 +134,7 @@ func TestOrchestratorRetriesTransientStageFailure(t *testing.T) {
 			errored = true
 		}
 	})
-	plan, err := o.Run(context.Background(), model.Brief{Genre: "makeover", Episodes: 2})
+	plan, err := o.Run(context.Background(), model.Brief{Requirement: "makeover", Episodes: 2})
 	if err != nil {
 		t.Fatalf("expected recovery, got %v", err)
 	}

@@ -9,13 +9,18 @@ type Image struct {
 }
 
 // Brief is the normalized user input that drives the whole pipeline.
+//
+// Requirement is the single free-text "生成需求": it fuses what used to be two
+// separate fields (题材/套路 + Ashley 品牌植入重点) into one long prompt the user
+// writes (often via the front-end prompt assistant). It carries the genre, the
+// 爽点 direction, character/conflict hints and the Ashley furniture placement
+// focus all at once.
 type Brief struct {
-	Genre       string  `json:"genre"`       // e.g. "家装改造逆袭"
+	Requirement string  `json:"requirement"` // 一段式生成需求(题材/爽点/Ashley 植入等)
 	Episodes    int     `json:"episodes"`    // default 5
 	EpisodeSecs int     `json:"episodeSecs"` // default 30
 	Market      string  `json:"market"`      // 默认 "中国"
 	Language    string  `json:"language"`    // 默认 "中文"
-	BrandFocus  string  `json:"brandFocus"`  // e.g. "客厅沙发、卧室套装"
 	Extra       string  `json:"extra"`       // free-form notes
 	Images      []Image `json:"images,omitempty"` // optional multimodal reference images
 }

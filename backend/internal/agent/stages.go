@@ -58,9 +58,9 @@ func (ConceptStage) Run(ctx context.Context, s *PlanState) error {
 	tr := tools.GetWinningTropes(s.Plan.Brief.Market, "home")
 	trJSON, _ := json.Marshal(tr)
 	data := map[string]any{
-		"Genre": s.Plan.Brief.Genre, "Episodes": s.Plan.Brief.Episodes,
-		"EpisodeSecs": s.Plan.Brief.EpisodeSecs, "BrandFocus": s.Plan.Brief.BrandFocus,
-		"Tropes": string(trJSON),
+		"Requirement": s.Plan.Brief.Requirement, "Episodes": s.Plan.Brief.Episodes,
+		"EpisodeSecs": s.Plan.Brief.EpisodeSecs,
+		"Tropes":      string(trJSON),
 	}
 	return call(ctx, s, "concept", data, &s.Plan.Concept, true)
 }

@@ -26,7 +26,7 @@ func TestRoundTrip(t *testing.T) {
 		t.Fatalf("migrate: %v", err)
 	}
 
-	brief := model.Brief{Genre: "测试题材", Episodes: 2, BrandFocus: "sofas"}
+	brief := model.Brief{Requirement: "测试题材", Episodes: 2}
 	plan := &model.Plan{
 		Brief:    brief,
 		Bible:    model.SeriesBible{Title: "测试剧名"},
@@ -77,8 +77,8 @@ func TestRoundTrip(t *testing.T) {
 	if len(rec.Plan.Episodes) != 2 {
 		t.Errorf("get plan episodes = %d, want 2", len(rec.Plan.Episodes))
 	}
-	if rec.Brief.Genre != "测试题材" {
-		t.Errorf("get brief genre = %q, want 测试题材", rec.Brief.Genre)
+	if rec.Brief.Requirement != "测试题材" {
+		t.Errorf("get brief genre = %q, want 测试题材", rec.Brief.Requirement)
 	}
 
 	// Non-existent id returns (nil, nil).
