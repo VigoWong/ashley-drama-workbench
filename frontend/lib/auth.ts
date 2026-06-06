@@ -14,6 +14,27 @@ export function clearToken() {
   localStorage.removeItem(KEY)
 }
 
+// verifyToken checks the stored token against the backend (tokens are minted per
+// server process, so a token from a previous run is stale). Returns true only if
+// a valid token exists; clears an explicitly-rejected (401) token. On a network
+// error it keeps the token (assume valid; the next real call will surface auth).
+export async function verifyToken(): Promise<boolean> {
+  const token = getToken()
+  if (!token) return false
+  try {
+    const res = await fetch(`${API}/api/history`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (res.status === 401) {
+      clearToken()
+      return false
+    }
+    return true
+  } catch {
+    return true
+  }
+}
+
 export async function login(username: string, password: string): Promise<void> {
   const res = await fetch(`${API}/api/login`, {
     method: "POST",

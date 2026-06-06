@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Brief, Concept, Plan, SSEvent } from "@/lib/types"
 import { generate, propose, refine, UnauthorizedError } from "@/lib/api"
-import { getToken, clearToken } from "@/lib/auth"
+import { clearToken, verifyToken } from "@/lib/auth"
 import InputForm from "@/components/InputForm"
 import ConceptChoice from "@/components/ConceptChoice"
 import StageTimeline from "@/components/StageTimeline"
@@ -48,8 +48,17 @@ export default function Home() {
   const [timelineStages, setTimelineStages] = useState<string[]>(STAGES)
 
   useEffect(() => {
-    setAuthed(Boolean(getToken()))
-    setReady(true)
+    let cancelled = false
+    ;(async () => {
+      const ok = await verifyToken()
+      if (!cancelled) {
+        setAuthed(ok)
+        setReady(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   function logout() {
@@ -66,7 +75,16 @@ export default function Home() {
   function handleUnauthorized() {
     clearToken()
     setAuthed(false)
+    // Reset the wizard so re-login lands on a clean step 1 (avoids being stuck on
+    // an intermediate step with no data after the session expired mid-flow).
     setView("workbench")
+    setStep(1)
+    setEvents([])
+    setPlan(null)
+    setConcepts([])
+    setProposing(false)
+    setEditing(false)
+    setFailed(null)
   }
 
   // run is step 1 → step 2: stash the brief, fetch 2-3 立意方向, and move to the
@@ -178,15 +196,31 @@ export default function Home() {
 
   // Avoid SSR/first-paint flash before we know auth state.
   if (!ready) return null
-  if (!authed) return <LoginForm onAuthed={() => setAuthed(true)} />
+  if (!authed)
+    return (
+      <LoginForm
+        onAuthed={() => {
+          restart()
+          setAuthed(true)
+        }}
+      />
+    )
+
+  // On the plan step (4) the PlanView renders its own large masthead, so the
+  // page masthead collapses to a slim identity bar to avoid two stacked headers.
+  const compact = step === 4
 
   return (
     <div className="relative min-h-screen">
       <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
         {/* ---- Masthead ---- */}
-        <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <header
+          className={`flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between ${
+            compact ? "mb-6" : "mb-10"
+          }`}
+        >
           <div>
-            <div className="mb-4 flex items-center gap-3">
+            <div className={`flex items-center gap-3 ${compact ? "" : "mb-4"}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/ashley-logo.png"
@@ -198,33 +232,39 @@ export default function Home() {
                 <span className="label-tech">品牌内容工作台</span>
               </span>
             </div>
-            <h1 className="font-display text-4xl font-semibold leading-[0.95] tracking-tight sm:text-5xl">
-              短剧
-              <br />
-              <span className="text-ember-400">生产工作台</span>
-            </h1>
-            <p className="mt-4 max-w-md font-sans text-sm leading-relaxed text-bone-300">
-              一句需求,即可生成面向国内市场、为 Ashley 家具带货的竖屏短剧 ——
-              从立意到通告单,由多 Agent 流水线自动产出。
-            </p>
+            {!compact && (
+              <>
+                <h1 className="font-display text-4xl font-semibold leading-[0.95] tracking-tight sm:text-5xl">
+                  短剧
+                  <br />
+                  <span className="text-ember-400">生产工作台</span>
+                </h1>
+                <p className="mt-4 max-w-md font-sans text-sm leading-relaxed text-bone-300">
+                  一句需求,即可生成面向国内市场、为 Ashley 家具带货的竖屏短剧 ——
+                  从立意到通告单,由多 Agent 流水线自动产出。
+                </p>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-4 sm:flex-col sm:items-end">
-            <div className="hidden text-right sm:block">
-              <span className="label-tech">画幅</span>
-              <div className="ml-auto mt-1 flex h-20 w-12 items-center justify-center rounded-md border border-bone-500/25 bg-ink-800">
-                <span className="font-mono text-[10px] text-bone-500">9:16</span>
+            {!compact && (
+              <div className="hidden text-right sm:block">
+                <span className="label-tech">画幅</span>
+                <div className="ml-auto mt-1 flex h-20 w-12 items-center justify-center rounded-md border border-bone-500/20 bg-ink-800">
+                  <span className="font-mono text-[10px] text-bone-400">9:16</span>
+                </div>
               </div>
-            </div>
+            )}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setView("history")}
-                className="rounded-lg border border-bone-500/25 bg-ink-800 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-bone-300 transition hover:border-ember-400/50 hover:text-ember-400"
+                className="rounded-lg border border-bone-500/20 bg-ink-800 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-bone-300 transition hover:border-ember-400/50 hover:text-ember-400"
               >
                 历史
               </button>
               <button
                 onClick={logout}
-                className="rounded-lg border border-bone-500/25 bg-ink-800 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-bone-300 transition hover:border-bone-500/50 hover:text-bone-100"
+                className="rounded-lg border border-bone-500/20 bg-ink-800 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-bone-300 transition hover:border-bone-500/50 hover:text-bone-100"
               >
                 退出登录
               </button>
@@ -263,7 +303,7 @@ export default function Home() {
                 <p className="font-mono text-sm text-signal-stop">✕ {failed}</p>
                 <button
                   onClick={restart}
-                  className="mt-3 rounded-lg border border-bone-500/25 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
+                  className="mt-3 rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
                 >
                   ← 返回修改需求
                 </button>
@@ -288,7 +328,7 @@ export default function Home() {
                 <p className="font-mono text-sm text-signal-stop">✕ {failed}</p>
                 <button
                   onClick={restart}
-                  className="mt-3 rounded-lg border border-bone-500/25 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
+                  className="mt-3 rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
                 >
                   ← 返回修改需求
                 </button>
@@ -301,7 +341,7 @@ export default function Home() {
         {step === 4 && plan && (
           <div className="space-y-8">
             <div className="flex items-center justify-between gap-3">
-              <p className="font-mono text-xs text-bone-500">
+              <p className="font-mono text-xs text-bone-400">
                 方案已生成 · 共 {plan.episodes?.length ?? 0} 集
                 {editing && <span className="ml-2 text-ember-400">· 编辑中（改动仅本地草稿）</span>}
               </p>
@@ -311,14 +351,14 @@ export default function Home() {
                   className={`rounded-lg border px-4 py-2 font-mono text-xs uppercase tracking-wider transition ${
                     editing
                       ? "border-ember-500/60 bg-ember-500/15 text-ember-200"
-                      : "border-bone-500/25 bg-ink-800 text-bone-100 hover:border-ember-400/50 hover:text-ember-400"
+                      : "border-bone-500/20 bg-ink-800 text-bone-100 hover:border-ember-400/50 hover:text-ember-400"
                   }`}
                 >
                   {editing ? "✓ 完成" : "✎ 编辑"}
                 </button>
                 <button
                   onClick={restart}
-                  className="rounded-lg border border-bone-500/25 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
+                  className="rounded-lg border border-bone-500/20 bg-ink-800 px-4 py-2 font-mono text-xs uppercase tracking-wider text-bone-100 transition hover:border-bone-500/50 hover:bg-ink-700"
                 >
                   ＋ 新方案
                 </button>
