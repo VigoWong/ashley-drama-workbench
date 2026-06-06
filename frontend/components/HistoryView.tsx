@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { HistoryRecord, HistorySummary } from "@/lib/types"
+import { useEffect, useRef, useState } from "react"
+import { HistoryRecord, HistorySummary, Plan } from "@/lib/types"
 import { listHistory, getHistory, deleteHistory, updateHistory } from "@/lib/history"
 import { refine, UnauthorizedError } from "@/lib/api"
 import PlanView from "@/components/PlanView"
@@ -33,6 +33,7 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
   const [refining, setRefining] = useState(false)
   const [dirty, setDirty] = useState(false) // 当前查看的方案有未存回的改动
   const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false) // 防止并发保存(闭包内读取最新值)
 
   useEffect(() => {
     let cancelled = false
@@ -106,6 +107,7 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
         if (e.type === "complete" && np) {
           setDetail((d) => (d ? { ...d, plan: np } : d))
           setDirty(true)
+          void persist(np) // 重生成完成即自动存回
         }
       })
     } catch (err) {
@@ -119,19 +121,20 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
     }
   }
 
-  // saveBack 把当前草稿「存回历史」:覆盖原记录,并同步列表里的标题/集数。
-  async function saveBack() {
-    if (!detail || saving || refining || !dirty) return
+  // persist 把给定方案覆盖保存回历史记录,并同步列表里的标题/集数。
+  async function persist(plan: Plan) {
+    if (!detail || savingRef.current) return
+    savingRef.current = true
     setSaving(true)
     setError(null)
     try {
-      await updateHistory(detail.id, detail.plan)
+      await updateHistory(detail.id, plan)
       setDirty(false)
       setItems((prev) =>
         prev
           ? prev.map((it) =>
               it.id === detail.id
-                ? { ...it, title: detail.plan.bible.title, episodes: detail.plan.episodes?.length ?? it.episodes }
+                ? { ...it, title: plan.bible.title, episodes: plan.episodes?.length ?? it.episodes }
                 : it
             )
           : prev
@@ -143,8 +146,14 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
       }
       setError(err instanceof Error ? err.message : "保存失败")
     } finally {
+      savingRef.current = false
       setSaving(false)
     }
+  }
+
+  // saveIfDirty:某区块点「✓ 完成」时触发,有改动就自动存回历史。
+  function saveIfDirty() {
+    if (detail && dirty) void persist(detail.plan)
   }
 
   // 离开详情页;若有未保存改动先确认。
@@ -162,23 +171,22 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
           <p className="font-mono text-xs text-bone-400">
             历史方案 · 共 {detail.plan.episodes?.length ?? 0} 集 · 生成于{" "}
             {formatTime(detail.createdAt)}
-            {dirty && <span className="ml-2 text-ember-400">· 有未存回的改动</span>}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {refining && (
               <span className="font-mono text-xs text-ember-300">正在重跑该段…</span>
             )}
-            <button
-              onClick={saveBack}
-              disabled={!dirty || saving || refining}
-              className={`rounded-lg border px-4 py-2 font-mono text-xs uppercase tracking-wider transition disabled:opacity-50 ${
-                dirty
-                  ? "border-ember-500/60 bg-ember-500/15 text-ember-200 hover:bg-ember-500/25"
-                  : "border-bone-500/20 bg-ink-800 text-bone-300"
-              }`}
-            >
-              {saving ? "保存中…" : dirty ? "💾 存回历史" : "✓ 已保存"}
-            </button>
+            <span className="font-mono text-[11px] text-bone-400">
+              {saving ? "保存中…" : dirty ? "● 编辑后点「完成」即自动存回" : "✓ 已保存"}
+            </span>
+            {error && dirty && !saving && (
+              <button
+                onClick={() => detail && void persist(detail.plan)}
+                className="rounded-lg border border-ember-500/60 bg-ember-500/15 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-ember-200 transition hover:bg-ember-500/25"
+              >
+                重试保存
+              </button>
+            )}
             <button
               onClick={closeDetail}
               disabled={refining || saving}
@@ -195,6 +203,7 @@ export default function HistoryView({ onBack, onUnauthorized }: Props) {
         )}
         <PlanView
           plan={detail.plan}
+          onEditDone={saveIfDirty}
           onChange={(p) => {
             setDetail((d) => (d ? { ...d, plan: p } : d))
             setDirty(true)
