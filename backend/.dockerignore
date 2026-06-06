@@ -1,0 +1,7 @@
+# 编译产物与本地密钥/env,不进构建上下文
+bin/
+*.log
+run-dev.sh
+vertex-sa.json
+.env
+.env.local

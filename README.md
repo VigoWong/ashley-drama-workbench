@@ -152,9 +152,26 @@
 
 ## 6. 运行指南
 
-**前置：** Go 1.23+、Node 18+；历史功能需要 Docker（Postgres）。
+**前置：** Docker 一键部署只需 Docker（含 Compose 插件）；不走容器的本地开发需 Go 1.23+、Node 18+。
 
-### 6.1 起数据库（历史持久化，可选）
+### 6.1 Docker 一键部署（推荐，前后端全栈）
+
+一条命令构建并启动 postgres + 后端 + 前端：
+
+```bash
+make deploy
+# 前端 http://localhost:3000   后端 http://localhost:8080   登录 admin / admin
+```
+
+- **LLM Key 可选**：在仓库根目录放一个 `.env`（如 `GEMINI_API_KEY=xxx`，可选 `GEMINI_MODEL=`），compose 会自动读取；全部留空则后端走无 Key 演示（DemoMock），仍返回完整中文示例方案。
+- 后端自动连上容器内 Postgres，**历史持久化默认开启**（无需手动设 `DATABASE_URL`）。
+- 常用命令：`make logs`（跟随日志）、`make ps`（状态）、`make restart`、`make down`（停止保留数据）、`make clean`（连库卷一起清）。
+
+> **远程主机部署**：`NEXT_PUBLIC_API` 在前端构建期注入 bundle，且由浏览器直接访问，必须是浏览器可达地址。部署到远端时先 `export NEXT_PUBLIC_API=http://<服务器IP或域名>:8080` 再 `make deploy`；改端口用 `BACKEND_PORT` / `FRONTEND_PORT`。
+> **Vertex 出图**：取消 `docker-compose.deploy.yml` 中 backend 的 `volumes` 注释，把 `vertex-sa.json` 挂进容器并设 `VERTEX_CREDENTIALS_FILE=/secrets/vertex-sa.json`。
+> 全栈部署用独立的 `docker-compose.deploy.yml`；下面 6.2–6.4 是不走容器的本地开发方式，与之二选一。
+
+### 6.2 起数据库（本地开发，历史持久化可选）
 
 ```bash
 # 默认端口 5432；本机若被占用，用 DB_PORT 覆盖，例如 5433
@@ -170,7 +187,7 @@ export DATABASE_URL="postgres://drama:drama@localhost:5433/drama?sslmode=disable
 
 > **优雅降级**：不设 `DATABASE_URL` 或连不上时，生成照常工作；`/api/history` 返回空列表、详情返回 404。
 
-### 6.2 后端：三种 Provider 模式
+### 6.3 后端：三种 Provider 模式
 
 `llm.FromEnv()` 按优先级择一（`backend/internal/llm/factory.go`）：
 
@@ -257,7 +274,7 @@ curl -N -X POST http://localhost:8080/api/generate \
 | DELETE | `/api/history/{id}` | Bearer | — | `204` | 删除一条历史方案（无 DB 时 404） |
 | GET | `/api/health` | 公开 | — | `ok` | 健康检查 |
 
-### 6.3 前端
+### 6.4 前端（本地开发）
 
 ```bash
 cd frontend
@@ -324,9 +341,14 @@ backend/
     store/store.go          Postgres 持久化（plans 表，brief/plan 存 jsonb）
     render/markdown.go      Plan → 中文 Markdown
   Makefile                  test / server / cli / build
+  Dockerfile                后端镜像（多阶段：Go 编译 → 精简 alpine 运行时）
   .env.example              环境变量示例（最小集：GEMINI_API_KEY / GEMINI_MODEL / PORT）
-docker-compose.yml          Postgres（持久化）+ 可选 Adminer
+Makefile                    顶层部署命令：make deploy / logs / ps / restart / down / clean
+docker-compose.yml          本地开发用：仅 Postgres（持久化）+ 可选 Adminer
+docker-compose.deploy.yml   全栈一键部署：postgres + 后端 + 前端（+ 可选 adminer profile）
 frontend/
+  Dockerfile                前端镜像（多阶段：Next standalone 构建 → 精简运行时）
+  next.config.ts            output: "standalone"（供 Docker 最小化运行时）
   app/page.tsx              工作台主页：登录门 + 四步向导（填需求→选立意→生成→方案）+ 历史切换
   components/LoginForm.tsx  登录表单
   components/InputForm.tsx  需求表单（含提示词助手：模板 / 标签 / AI 扩写）+ 参考素材（预设 + 上传，≤3 张）
