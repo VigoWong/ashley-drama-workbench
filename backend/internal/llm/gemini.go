@@ -97,7 +97,10 @@ func NewVertex(saJSON []byte, project, location, model string) (*Gemini, error) 
 		project:     project,
 		location:    location,
 		imagenModel: imagenModel,
-		tokenSource: cfg.TokenSource(context.Background()),
+		// Wrap the caching token source with a small retry so a transient
+		// proxy EOF on the token mint doesn't surface on paths that call
+		// doGenerate directly (chat). See retryTokenSource.
+		tokenSource: retryTokenSource{base: cfg.TokenSource(context.Background()), attempts: 3, backoff: 300 * time.Millisecond},
 		// Imagen generation is slower than text; give it a roomy timeout.
 		client: &http.Client{Timeout: 120 * time.Second},
 	}, nil
