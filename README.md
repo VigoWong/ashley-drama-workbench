@@ -1,4 +1,4 @@
-# 短剧生产工作台 · Ashley 家具品牌带货
+# 短剧生产工作台 · 个人作业
 
 输入**一段生成需求**（用一句话写清题材/套路、爽点方向与 Ashley 植入重点）外加集数、单集秒数与可选参考图，多 Agent 流水线即可产出一份结构化、可直接交付编剧室与剧组的**中文短剧制作方案**。方案面向**中国国内市场**的竖屏短剧（抖音 / 快手 / 红果短剧），剧情中自然植入 **Ashley（爱室丽）家具**，把"看剧"变成"带货"。
 
@@ -11,12 +11,12 @@
 
 后端两个入口：
 
-- **HTTP + SSE 服务**（`backend/cmd/server`）：`/api/chat`(对话式 agent)、`/api/assist`(扩写需求)、`/api/propose`(多立意)、`/api/generate`(流式生成)、`/api/refine`(逐段重跑)、`/api/history*`(历史增删改查)，由 **Next.js 16 + Tailwind v4** 前端驱动。
+- **HTTP + SSE 服务**（`backend/cmd/server`）：`/api/chat`(对话式 agent)、`/api/assist`(扩写需求)、`/api/propose`(多立意)、`/api/generate`(流式生成)、`/api/refine`(逐段重跑)、`/api/history`*(历史增删改查)，由 **Next.js 16 + Tailwind v4** 前端驱动。
 - **CLI**（`backend/cmd/cli`）：同一条流水线，输出 Markdown 或 JSON。
 
-> 📖 **产品使用指南(含每页截图)**：[`使用说明.md`](使用说明.md) —— 面向使用者,讲清四步如何产出与打磨一份方案。
+> 📖 **产品使用指南(含每页截图)**：`[使用说明.md](使用说明.md)` —— 面向使用者,讲清四步如何产出与打磨一份方案。
 >
-> 设计文档与实现计划（历史过程产物，英文）见 [`docs/superpowers/`](docs/superpowers/)。
+> 设计文档与实现计划（历史过程产物，英文）见 `[docs/superpowers/](docs/superpowers/)`。
 
 ---
 
@@ -24,16 +24,18 @@
 
 最终产出是一份结构化的 `Plan`（见 `backend/internal/model/plan.go`），含 8 个区块：
 
-| # | 区块 | 内容 |
-|---|------|------|
-| 1 | **立意 Concept** | 一句话梗概、主题、目标观众、基调、**核心爽点引擎**、核心冲突、所用套路 |
-| 2 | **剧集圣经 Series Bible** | 适合追看的剧名、题材标签、集数/单集秒数/总时长、分发平台、品牌植入主线 |
-| 3 | **人物 Characters** | 主角 / 反派 / 爱情线等人物的小传、人物弧光、关系网 |
-| 4 | **分集 Episodes** | 每集梗概、节拍、黄金 3 秒钩子、结尾悬念、爽点/反转 |
-| 5 | **品牌植入 Placements** | 哪一集、哪个场景、植入哪个 Ashley SKU、踩在哪个情绪节点、CTA 何时出现 |
-| 6 | **英雄分镜 Hero** | 为 1-2 个爽点最高的剧集生成完整分镜表 + 样例台词 |
-| 7 | **制作与分发 Production / Distribution** | 画幅、预算档位、镜头数、卡司数、场景地点、家具道具清单；CTA 文案、挂链位置、话题标签 |
-| 8 | **AI 分镜概念图 Visuals** | 由 Vertex Imagen 生成的 9:16 系列海报 + 英雄场景概念图（base64，存 `Plan.Visuals`） |
+
+| #   | 区块                                  | 内容                                                               |
+| --- | ----------------------------------- | ---------------------------------------------------------------- |
+| 1   | **立意 Concept**                      | 一句话梗概、主题、目标观众、基调、**核心爽点引擎**、核心冲突、所用套路                            |
+| 2   | **剧集圣经 Series Bible**               | 适合追看的剧名、题材标签、集数/单集秒数/总时长、分发平台、品牌植入主线                             |
+| 3   | **人物 Characters**                   | 主角 / 反派 / 爱情线等人物的小传、人物弧光、关系网                                     |
+| 4   | **分集 Episodes**                     | 每集梗概、节拍、黄金 3 秒钩子、结尾悬念、爽点/反转                                      |
+| 5   | **品牌植入 Placements**                 | 哪一集、哪个场景、植入哪个 Ashley SKU、踩在哪个情绪节点、CTA 何时出现                       |
+| 6   | **英雄分镜 Hero**                       | 为 1-2 个爽点最高的剧集生成完整分镜表 + 样例台词                                     |
+| 7   | **制作与分发 Production / Distribution** | 画幅、预算档位、镜头数、卡司数、场景地点、家具道具清单；CTA 文案、挂链位置、话题标签                     |
+| 8   | **AI 分镜概念图 Visuals**                | 由 Vertex Imagen 生成的 9:16 系列海报 + 英雄场景概念图（base64，存 `Plan.Visuals`） |
+
 
 **默认 5 集 × 30 秒。** 服务端会对缺省字段补默认值（见 `Brief.ApplyDefaults`：集数 5、单集 30 秒、市场"中国"、语言"中文"）。
 
@@ -273,19 +275,21 @@ curl -N -X POST http://localhost:8080/api/generate \
 
 **HTTP 端点一览**（`backend/cmd/server/main.go`）：
 
-| 方法 | 路径 | 鉴权 | 请求体 | 响应 | 说明 |
-|------|------|------|--------|------|------|
-| POST | `/api/login` | 公开 | `{username, password}` | `{token}` | 校验账密，发随机会话 token |
-| POST | `/api/chat` | Bearer | `{messages, plan?}` | SSE（`ChatEvent`） | 对话式 ReAct agent：流式推送思考 / 工具调用 / 逐区块产物 / 回复 |
-| POST | `/api/assist` | Bearer | `{requirement, episodes, episodeSecs, images}` | `{requirement}` | 提示词助手：把粗略想法（可带参考图）扩写成完整中文需求（纯 JSON，不流式、不入库） |
-| POST | `/api/propose` | Bearer | `Brief` | `{concepts:[…2-3…]}` | 产出多个立意方向（纯 JSON，不流式、不入库） |
-| POST | `/api/generate` | Bearer | `Brief`（可选 `concept`） | SSE | 流式生成方案；带 `concept` 则从 bible 起；**存历史** |
-| POST | `/api/refine` | Bearer | `{plan, fromStage, only, note}` | SSE | 从某阶段重跑（人机协作）；**不存历史** |
-| GET | `/api/history` | Bearer | — | `[Summary]` | 历史方案列表（无 DB 时返回空数组） |
-| GET | `/api/history/{id}` | Bearer | — | `Record` | 历史方案详情（无 DB 时 404） |
-| PUT | `/api/history/{id}` | Bearer | `{plan}` | `204` | 存回历史：覆盖原记录的方案（编辑/重生成后持久化；无 DB 或 id 不存在时 404） |
-| DELETE | `/api/history/{id}` | Bearer | — | `204` | 删除一条历史方案（无 DB 时 404） |
-| GET | `/api/health` | 公开 | — | `ok` | 健康检查 |
+
+| 方法     | 路径                  | 鉴权     | 请求体                                            | 响应                   | 说明                                           |
+| ------ | ------------------- | ------ | ---------------------------------------------- | -------------------- | -------------------------------------------- |
+| POST   | `/api/login`        | 公开     | `{username, password}`                         | `{token}`            | 校验账密，发随机会话 token                             |
+| POST   | `/api/chat`         | Bearer | `{messages, plan?}`                            | SSE（`ChatEvent`）     | 对话式 ReAct agent：流式推送思考 / 工具调用 / 逐区块产物 / 回复   |
+| POST   | `/api/assist`       | Bearer | `{requirement, episodes, episodeSecs, images}` | `{requirement}`      | 提示词助手：把粗略想法（可带参考图）扩写成完整中文需求（纯 JSON，不流式、不入库）  |
+| POST   | `/api/propose`      | Bearer | `Brief`                                        | `{concepts:[…2-3…]}` | 产出多个立意方向（纯 JSON，不流式、不入库）                     |
+| POST   | `/api/generate`     | Bearer | `Brief`（可选 `concept`）                          | SSE                  | 流式生成方案；带 `concept` 则从 bible 起；**存历史**        |
+| POST   | `/api/refine`       | Bearer | `{plan, fromStage, only, note}`                | SSE                  | 从某阶段重跑（人机协作）；**不存历史**                        |
+| GET    | `/api/history`      | Bearer | —                                              | `[Summary]`          | 历史方案列表（无 DB 时返回空数组）                          |
+| GET    | `/api/history/{id}` | Bearer | —                                              | `Record`             | 历史方案详情（无 DB 时 404）                           |
+| PUT    | `/api/history/{id}` | Bearer | `{plan}`                                       | `204`                | 存回历史：覆盖原记录的方案（编辑/重生成后持久化；无 DB 或 id 不存在时 404） |
+| DELETE | `/api/history/{id}` | Bearer | —                                              | `204`                | 删除一条历史方案（无 DB 时 404）                         |
+| GET    | `/api/health`       | 公开     | —                                              | `ok`                 | 健康检查                                         |
+
 
 ### 6.4 前端（本地开发）
 
@@ -323,7 +327,7 @@ cd backend && go test ./...
 - **编排器**（`internal/agent/orchestrator_test.go`）：`TestOrchestratorRunsAllStages`、`TestOrchestratorRunFrom`（验证从某阶段重跑）、`TestOrchestratorRetriesTransientStageFailure`（验证单阶段重试）。
 - **阶段与自纠正**（`internal/agent/stages_test.go`）：`TestConceptStageWritesPlan`、`TestEpisodeStageRefinesOnBadPacing`。
 - **数据库往返**（`internal/store/store_test.go`）：`TestRoundTrip`，需指向 docker-compose 的 Postgres 才会真正执行：
-  `DATABASE_URL=postgres://drama:drama@localhost:5433/drama?sslmode=disable go test ./internal/store`
+`DATABASE_URL=postgres://drama:drama@localhost:5433/drama?sslmode=disable go test ./internal/store`
 
 ---
 
@@ -421,3 +425,4 @@ docs/superpowers/          设计文档 + 实现计划（历史过程产物，�
 
 - Imagen 在图内直接渲染中文文字（如海报标题）易出乱码，因此分镜/海报提示词均要求 "no text / no watermark / no logo"，文字标题交由后期处理。
 - DemoMock 输出与请求集数无关（固定 12 集整季），仅用于演示与测试链路。
+
