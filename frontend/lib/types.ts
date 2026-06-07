@@ -17,3 +17,22 @@ export interface RefineReq { plan: Plan; fromStage: string; only: boolean; note?
 export interface ProposeResp { concepts: Concept[] }
 export interface HistorySummary { id: string; title: string; genre: string; episodes: number; createdAt: string }
 export interface HistoryRecord { id: string; createdAt: string; brief: Brief; plan: Plan }
+
+// ---- conversational ReAct agent (mirrors backend/internal/model/chat.go) ----
+export type ChatEventType =
+  | "thought.delta" | "thought.done"
+  | "tool.start" | "tool.result"
+  | "message.delta" | "message.done"
+  | "block.start" | "block.done"
+  | "turn.done" | "error"
+export interface ChatEvent {
+  type: ChatEventType
+  text?: string; message?: string
+  toolId?: string; toolName?: string; friendlyName?: string
+  input?: unknown; output?: unknown; status?: "ok" | "fail"; affectsStage?: string
+  stage?: string; payload?: unknown
+  plan?: Plan
+}
+// Prior text history sent back on /api/chat (user/assistant bubbles only).
+export interface ChatMessage { role: "user" | "assistant" | "tool"; text?: string }
+export interface ChatReq { message: string; history?: ChatMessage[]; plan?: Plan }
