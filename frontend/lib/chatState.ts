@@ -58,6 +58,42 @@ function isBlock(stage?: string): stage is BlockKey {
   return !!stage && (BLOCK_ORDER as readonly string[]).includes(stage)
 }
 
+// emptyPlan is a blank skeleton so block.done payloads can be merged in
+// progressively before the authoritative full plan arrives on turn.done.
+function emptyPlan(): Plan {
+  return {
+    brief: { requirement: "", episodes: 0, episodeSecs: 0 },
+    concept: { logline: "", theme: "", audience: "", tone: "", payoffEngine: "", coreConflict: "", tropesUsed: [] },
+    bible: { title: "", genreTags: [], episodes: 0, episodeSecs: 0, platform: "", integrationThesis: "" },
+    characters: [], episodes: [], placements: [], heroScenes: [],
+    production: { format: "", budgetTier: "", shotCount: 0, castSize: 0, locations: [], furnitureProps: [] },
+    distribution: { ctaCopy: "", linkPlacement: "", hashtags: [] },
+    visuals: [],
+  }
+}
+
+// mergeBlock folds a completed block's payload into the plan so the canvas grows
+// section-by-section as the agent works (and survives a turn that errors before
+// turn.done). The payload shapes mirror chatBlockPayload on the backend.
+function mergeBlock(plan: Plan | null, stage: BlockKey, payload: unknown): Plan {
+  const p: Plan = plan ? { ...plan } : emptyPlan()
+  switch (stage) {
+    case "concept": p.concept = payload as Plan["concept"]; break
+    case "bible": p.bible = payload as Plan["bible"]; break
+    case "characters": p.characters = (payload as Plan["characters"]) ?? []; break
+    case "episodes": p.episodes = (payload as Plan["episodes"]) ?? []; break
+    case "placements": p.placements = (payload as Plan["placements"]) ?? []; break
+    case "hero": p.heroScenes = (payload as Plan["heroScenes"]) ?? []; break
+    case "production_distribution": {
+      const pd = payload as { production: Plan["production"]; distribution: Plan["distribution"] }
+      if (pd) { p.production = pd.production; p.distribution = pd.distribution }
+      break
+    }
+    case "visuals": p.visuals = (payload as Plan["visuals"]) ?? []; break
+  }
+  return p
+}
+
 // chatReducer folds one ChatEvent into the state. It is a pure function (no I/O).
 export function chatReducer(state: ChatState, e: ChatEvent): ChatState {
   switch (e.type) {
@@ -114,7 +150,11 @@ export function chatReducer(state: ChatState, e: ChatEvent): ChatState {
       return { ...state, blocks: { ...state.blocks, [e.stage]: "writing" } }
     case "block.done":
       if (!isBlock(e.stage)) return state
-      return { ...state, blocks: { ...state.blocks, [e.stage]: "done" } }
+      return {
+        ...state,
+        blocks: { ...state.blocks, [e.stage]: "done" },
+        plan: mergeBlock(state.plan, e.stage, e.payload),
+      }
     case "turn.done":
       return { ...state, running: false, plan: e.plan ?? state.plan }
     case "error":

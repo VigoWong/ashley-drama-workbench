@@ -36,7 +36,7 @@ export default function PlanCanvas({ plan, blocks, onChange, onRefine }: Props) 
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-        {plan ? (
+        {plan && plan.concept.logline ? (
           <div className="space-y-6">
             {doneCount > 0 && <ExportBar plan={plan} />}
             <PlanView plan={plan} onChange={onChange} onRefine={onRefine} />

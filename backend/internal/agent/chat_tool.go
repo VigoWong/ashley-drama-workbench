@@ -216,8 +216,28 @@ func (t stageTool) Run(ctx context.Context, tc *ToolCtx, args map[string]any) Ob
 		return Observation{OK: false, Error: err.Error()}
 	}
 	payload := chatBlockPayload(tc.Plan, stage)
+	// The full payload (incl. base64 visuals) goes to the FRONT END via block.done.
+	// The observation fed back into the LLM history uses a COMPACT form: the Go side
+	// already threads the plan into the next stage, so the model only needs to know
+	// the block succeeded — never the bytes. Echoing base64 visuals here once blew
+	// the context past Gemini's 1M-token limit.
 	tc.Emit(model.ChatEvent{Type: model.ChatBlockDone, Stage: stage, Payload: payload})
-	return Observation{OK: true, Data: payload}
+	return Observation{OK: true, Data: modelFacingData(stage, tc.Plan)}
+}
+
+// modelFacingData returns a compact, context-safe summary of a completed stage for
+// feeding back to the LLM (no base64, bounded size).
+func modelFacingData(stage string, p *model.Plan) any {
+	switch stage {
+	case "visuals":
+		labels := make([]string, 0, len(p.Visuals))
+		for _, v := range p.Visuals {
+			labels = append(labels, v.Label)
+		}
+		return map[string]any{"count": len(p.Visuals), "labels": labels}
+	default:
+		return map[string]any{"done": true, "stage": stage}
+	}
 }
 
 // ---- refine tool ------------------------------------------------------------
@@ -253,7 +273,7 @@ func (refineTool) Run(ctx context.Context, tc *ToolCtx, args map[string]any) Obs
 	}
 	payload := chatBlockPayload(tc.Plan, stage)
 	tc.Emit(model.ChatEvent{Type: model.ChatBlockDone, Stage: stage, Payload: payload})
-	return Observation{OK: true, Data: payload}
+	return Observation{OK: true, Data: modelFacingData(stage, tc.Plan)}
 }
 
 // ---- default registry -------------------------------------------------------

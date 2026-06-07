@@ -11,6 +11,21 @@ import (
 // maxChatSteps bounds the ReAct loop so a misbehaving model can't spin forever.
 const maxChatSteps = 24
 
+// maxObsChars caps the size of a tool observation fed back into the LLM history,
+// a defense-in-depth guard against context-token blowups (e.g. a tool ever
+// returning large/base64 data). Tools already return compact model-facing data;
+// this bounds anything that slips through.
+const maxObsChars = 8000
+
+// capJSON truncates an observation JSON string to at most n chars, appending a
+// marker so the model knows it was clipped (the string need not stay valid JSON).
+func capJSON(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + `…"(truncated)"`
+}
+
 // affectsStageFor maps a tool name to the plan block it touches, for canvas
 // linkage on tool.result. Deterministic tools that don't mutate a block return "".
 func affectsStageFor(name string) string {
@@ -102,7 +117,7 @@ func RunChat(
 				Status: status, Output: obs, AffectsStage: affectsStageFor(call.Name),
 			})
 			history = append(history, Message{
-				Role: RoleTool, ToolCallID: call.ID, ToolName: call.Name, ToolResult: mustJSON(obs),
+				Role: RoleTool, ToolCallID: call.ID, ToolName: call.Name, ToolResult: capJSON(mustJSON(obs), maxObsChars),
 			})
 		}
 	}
