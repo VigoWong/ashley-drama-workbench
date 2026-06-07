@@ -13,7 +13,7 @@ export default function Home() {
   const [ready, setReady] = useState(false)
   const [authed, setAuthed] = useState(false)
   const [view, setView] = useState<View>("workbench")
-  const [mode, setMode] = useState<Mode>("chat")
+  const [mode, setMode] = useState<Mode>("wizard")
 
   useEffect(() => {
     let cancelled = false
@@ -50,7 +50,7 @@ export default function Home() {
           <div className="flex items-center gap-2">
             {/* mode switch */}
             <div className="flex rounded-lg border border-bone-500/20 bg-ink-800 p-0.5">
-              {(["chat", "wizard"] as Mode[]).map((m) => (
+              {(["wizard", "chat"] as Mode[]).map((m) => (
                 <button key={m} onClick={() => setMode(m)}
                   className={`rounded-md px-3 py-1 font-mono text-[11px] uppercase tracking-wider transition ${mode === m ? "bg-ember-500 text-ink-900" : "text-bone-300 hover:text-ember-400"}`}>
                   {m === "chat" ? "对话" : "向导"}
