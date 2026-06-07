@@ -72,6 +72,26 @@ function emptyPlan(): Plan {
   }
 }
 
+// normalizePlan coerces every array field to a real array, so PlanView (which
+// maps over them unconditionally) never hits a null. Go marshals an unset slice
+// as JSON null, and partial plans built mid-turn may lack later sections — this
+// makes any plan shape safe to render.
+function normalizePlan(p: Plan): Plan {
+  const a = <T,>(x: T[] | null | undefined): T[] => x ?? []
+  return {
+    ...p,
+    concept: { ...p.concept, tropesUsed: a(p.concept?.tropesUsed) },
+    bible: { ...p.bible, genreTags: a(p.bible?.genreTags) },
+    characters: a(p.characters),
+    episodes: a(p.episodes).map((e) => ({ ...e, beats: a(e.beats) })),
+    placements: a(p.placements),
+    heroScenes: a(p.heroScenes).map((h) => ({ ...h, shots: a(h.shots) })),
+    production: { ...p.production, locations: a(p.production?.locations), furnitureProps: a(p.production?.furnitureProps) },
+    distribution: { ...p.distribution, hashtags: a(p.distribution?.hashtags) },
+    visuals: a(p.visuals),
+  }
+}
+
 // mergeBlock folds a completed block's payload into the plan so the canvas grows
 // section-by-section as the agent works (and survives a turn that errors before
 // turn.done). The payload shapes mirror chatBlockPayload on the backend.
@@ -91,7 +111,7 @@ function mergeBlock(plan: Plan | null, stage: BlockKey, payload: unknown): Plan 
     }
     case "visuals": p.visuals = (payload as Plan["visuals"]) ?? []; break
   }
-  return p
+  return normalizePlan(p)
 }
 
 // chatReducer folds one ChatEvent into the state. It is a pure function (no I/O).
@@ -156,7 +176,7 @@ export function chatReducer(state: ChatState, e: ChatEvent): ChatState {
         plan: mergeBlock(state.plan, e.stage, e.payload),
       }
     case "turn.done":
-      return { ...state, running: false, plan: e.plan ?? state.plan }
+      return { ...state, running: false, plan: e.plan ? normalizePlan(e.plan) : state.plan }
     case "error":
       // A stage-scoped error resolves that block; a turn-level error ends the turn.
       if (isBlock(e.stage)) {
