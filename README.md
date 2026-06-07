@@ -4,9 +4,14 @@
 
 它解决的核心问题：**家具品牌如何用短剧做内容带货。** 短剧最常见的场景——爆改出租屋、离婚后重新开始、打造梦想之家——本身就发生在客厅、卧室、餐桌旁。**布景即展厅**：一张沙发不是和解戏里的道具，它就是那场戏的情绪锚点。把"情绪节点 → SKU → CTA"绑定起来，剧情卖的是情绪，CTA 卖的是商品。
 
-两个入口共用同一套编排器：
+前端提供**两种模式**(可切换，默认对话式)，共用同一套后端能力：
 
-- **HTTP + SSE 服务**（`backend/cmd/server`）：`/api/assist` 把粗略想法（含参考图）扩写成完整需求，`/api/propose` 先产出多个立意方向，`/api/generate` 流式推送每个阶段的进度与产物，`/api/refine` 支持人机协作重跑，由 **Next.js 16 + Tailwind v4** 前端驱动。
+- **对话式 ReAct agent**(默认)：和 AI 多轮对话即可产出 / 修改方案——`/api/chat` 流式推送 agent 的**思考、工具调用与逐区块产物**，右侧画布实时拼出 8 区块方案。
+- **向导式四步**：填需求 → 选立意 → 流式生成 → 方案，适合按部就班产出。
+
+后端两个入口：
+
+- **HTTP + SSE 服务**（`backend/cmd/server`）：`/api/chat`(对话式 agent)、`/api/assist`(扩写需求)、`/api/propose`(多立意)、`/api/generate`(流式生成)、`/api/refine`(逐段重跑)、`/api/history*`(历史增删改查)，由 **Next.js 16 + Tailwind v4** 前端驱动。
 - **CLI**（`backend/cmd/cli`）：同一条流水线，输出 Markdown 或 JSON。
 
 > 📖 **产品使用指南(含每页截图)**：[`使用说明.md`](使用说明.md) —— 面向使用者,讲清四步如何产出与打磨一份方案。
@@ -52,16 +57,19 @@
 ## 3. 功能总览
 
 - **登录门**：单用户 token 鉴权，默认 `admin / admin`（可经环境变量覆盖）。
+- **两种模式(可切换，默认对话式)**：
+  - **对话式 ReAct agent**(`/api/chat`) —— 和 AI 聊天即可生成 / 局部修改方案；它会**流式展示自己的思考与工具调用**(查套路库、查 SKU、逐阶段写作、节奏校验…)，把 8 区块逐块拼到右侧画布。
+  - **向导式四步** —— 填需求 → 选立意 → 生成 → 方案(下述)。
 - **四步向导**：
   1. **填需求** —— 用一段话写清题材/套路、爽点与 Ashley 植入重点（再填集数、单集秒数，可选参考图）。配 **提示词助手**：一键「套用模板」、点击标签拼接，或用「AI 扩写」结合已选参考素材自动补全，仍可继续手改。
   2. **选立意** —— `/api/propose` 一次产出 **2-3 个"显著不同"的立意方向**（不同的梗概、爽点引擎、基调、核心冲突），用户挑选其一，并可**就地微调**其关键字段。
   3. **生成** —— 按选定立意，从剧集圣经阶段往下跑完整流水线，流式时间线实时展示每个阶段。
-  4. **方案** —— 8 区块方案展示，可**编辑关键字段**，可对任一区块**单段重生成**或**从该段往下重跑**。
+  4. **方案** —— 8 区块方案展示，每个区块可**就地编辑**或**单段重生成**(`/api/refine`，附一句要求只重写这一段)。
 - **提示词助手**：「填需求」步可一键套用模板、点击标签（题材/爽点/Ashley 植入）拼接，或用 **AI 扩写**（`/api/assist`）把粗略想法补全成完整中文生成需求；扩写会**结合已选参考素材**接地，仍可继续手改。
 - **多模态参考图**：6 张预设家居素材（`frontend/public/materials/`）+ 本地上传（合计 ≤ 3 张），作为参考图喂给模型，影响空间风格与家具质感。
 - **AI 分镜概念图**：Vertex 模式下用 Imagen 为系列海报 + 英雄场景生成 9:16 概念图；不支持出图的 Provider（AI Studio / Mock）优雅跳过，文字方案照常完整。
 - **真实 / 示例两种生成**：配 Key 走真实大模型；无 Key 自动降级为内置 Mock（含 propose 提案 fixture），返回一份完整可信的中文示例方案——**整套流程与测试无需任何 Key**。
-- **历史**：配置数据库后，每次 `/api/generate` 自动持久化，可在历史页查看列表与完整方案详情（`/api/refine` 的交互草稿不入库）。
+- **历史**：配置数据库后，每次生成自动持久化；历史页可查看列表 / 删除，**详情页可逐区块编辑或重生成，点「✓ 完成」自动存回原记录**（`PUT /api/history/{id}`）。
 - **导出**：方案页一键导出 **JSON** 或 **Markdown**。
 
 ---
@@ -129,6 +137,7 @@
 - **3 个确定性工具**（`backend/internal/tools/`）：`GetWinningTropes`（中文家居题材库）、`GetProductCatalog`（Ashley SKU 库）、`ValidatePacing`（纯 Go 节奏校验闸门）。
 - **多模态**：`Brief.Images`（`[]Image{mimeType, data(纯 base64), label}`）只喂给 **concept / placements / hero** 三个视觉阶段以控制 token 成本；其余阶段不带图。
 - **2 个入口、1 套编排器**：`cmd/server`（HTTP+SSE）与 `cmd/cli` 都调用同一个 `agent.New(provider, emit)`，跑 `Run` / `RunFrom`。
+- **对话式 ReAct agent**（`backend/internal/agent/chat_*.go`，`/api/chat`）：在固定流水线之外，另有一条**对话式**编排——一个 guided-ReAct 循环（`chat_engine.go`，步数上限 `maxChatSteps`），把**同样的 8 个阶段包装成工具**(`generateConcept`/`writeBible`/`generateEpisodes`…) 外加 3 个确定性工具(查套路库 / 查 SKU / 节奏校验)交给模型按需调用。它通过 `ChatLLM` 接口接 Gemini 原生 function-calling（`chat_gemini.go`）或无 Key 的 `ScriptedLLM`（`chat_mock.go`，供演示/测试），并把**思考、工具调用、逐区块产物、回复**作为细粒度 `ChatEvent` 流式 emit；前端两栏界面(左对话、右画布)据此实时拼出方案。工具失败以"可自纠正的观察"回灌(OK=false)，而非中断。
 
 ---
 
@@ -267,6 +276,7 @@ curl -N -X POST http://localhost:8080/api/generate \
 | 方法 | 路径 | 鉴权 | 请求体 | 响应 | 说明 |
 |------|------|------|--------|------|------|
 | POST | `/api/login` | 公开 | `{username, password}` | `{token}` | 校验账密，发随机会话 token |
+| POST | `/api/chat` | Bearer | `{messages, plan?}` | SSE（`ChatEvent`） | 对话式 ReAct agent：流式推送思考 / 工具调用 / 逐区块产物 / 回复 |
 | POST | `/api/assist` | Bearer | `{requirement, episodes, episodeSecs, images}` | `{requirement}` | 提示词助手：把粗略想法（可带参考图）扩写成完整中文需求（纯 JSON，不流式、不入库） |
 | POST | `/api/propose` | Bearer | `Brief` | `{concepts:[…2-3…]}` | 产出多个立意方向（纯 JSON，不流式、不入库） |
 | POST | `/api/generate` | Bearer | `Brief`（可选 `concept`） | SSE | 流式生成方案；带 `concept` 则从 bible 起；**存历史** |
@@ -340,6 +350,12 @@ backend/
     agent/propose.go        Propose：单次 LLM 产出 2-3 个立意方向
     agent/assist.go         Assist：单次 LLM 把粗略想法扩写成完整生成需求（提示词助手后端，支持参考图接地）
     agent/orchestrator.go   编排器：Run / RunFrom、按序运行、单阶段重试、emit 事件
+    agent/chat_engine.go    对话式 guided-ReAct 循环（/api/chat 后端;把阶段当工具调用）
+    agent/chat_tool.go      工具注册表：8 阶段 + 确定性工具(套路/SKU/节奏)包装成 ReAct 工具
+    agent/chat_llm.go       ChatLLM 接口 + 对话/工具调用类型
+    agent/chat_gemini.go    Gemini 原生 function-calling 适配
+    agent/chat_mock.go      ScriptedLLM：无 Key 的确定性 ReAct 轨迹(演示/测试)
+    agent/chat_prompt.go    guided-ReAct system 提示词构造
     auth/auth.go            单用户 token 鉴权（LoginHandler + Bearer 中间件）
     store/store.go          Postgres 持久化（plans 表，brief/plan 存 jsonb）
     render/markdown.go      Plan → 中文 Markdown
@@ -352,16 +368,20 @@ docker-compose.deploy.yml   全栈一键部署：postgres + 后端 + 前端（+ 
 frontend/
   Dockerfile                前端镜像（多阶段：Next standalone 构建 → 精简运行时）
   next.config.ts            output: "standalone"（供 Docker 最小化运行时）
-  app/page.tsx              工作台主页：登录门 + 四步向导（填需求→选立意→生成→方案）+ 历史切换
+  app/page.tsx              工作台主页：登录门 + 对话/向导 模式切换（默认对话）+ 历史切换
+  components/ChatView.tsx   对话式两栏界面（左对话列 + 右方案画布），消费 /api/chat 事件流
+  components/WizardView.tsx 向导式四步容器（填需求→选立意→生成→方案）
+  components/chat/          对话子组件：ConversationColumn / MessageBubble / ThoughtBlock / ToolCard / PlanCanvas
   components/LoginForm.tsx  登录表单
   components/InputForm.tsx  需求表单（含提示词助手：模板 / 标签 / AI 扩写）+ 参考素材（预设 + 上传，≤3 张）
   components/ConceptChoice.tsx  第 2 步：2-3 个立意方向选型卡片（单选 + 就地微调）
   components/StageTimeline.tsx  SSE 实时阶段时间线（可展开原始输出）
-  components/PlanView.tsx   8 区块方案展示 + 字段编辑 + 单段重生成 / 从本段往下重跑
+  components/PlanView.tsx   8 区块方案展示 + 逐区块「就地编辑 / 单段重生成」（生成页与历史详情共用）
   components/ExportBar.tsx  JSON / Markdown 导出
-  components/HistoryView.tsx  历史列表与详情
+  components/HistoryView.tsx  历史列表与详情（逐区块编辑/重生成，点「完成」自动存回）
   components/Stepper.tsx    四步进度指示
-  lib/api.ts               assist / propose / generate / refine、SSE 解析、UnauthorizedError
+  lib/api.ts               chat / assist / propose / generate / refine、SSE 解析、UnauthorizedError
+  lib/chatState.ts         对话式 ChatEvent → 界面状态的纯 reducer
   lib/auth.ts              登录、token 存取
   lib/history.ts           历史列表/详情接口
   lib/materials.ts         6 张预设家居素材定义
