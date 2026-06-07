@@ -9,6 +9,8 @@
 - **HTTP + SSE 服务**（`backend/cmd/server`）：`/api/assist` 把粗略想法（含参考图）扩写成完整需求，`/api/propose` 先产出多个立意方向，`/api/generate` 流式推送每个阶段的进度与产物，`/api/refine` 支持人机协作重跑，由 **Next.js 16 + Tailwind v4** 前端驱动。
 - **CLI**（`backend/cmd/cli`）：同一条流水线，输出 Markdown 或 JSON。
 
+> 📖 **产品使用指南(含每页截图)**：[`使用说明.md`](使用说明.md) —— 面向使用者,讲清四步如何产出与打磨一份方案。
+>
 > 设计文档与实现计划（历史过程产物，英文）见 [`docs/superpowers/`](docs/superpowers/)。
 
 ---
