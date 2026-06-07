@@ -42,3 +42,41 @@ func TestStageToolPreconditionFails(t *testing.T) {
 		t.Fatal("expected a non-empty error message describing the missing dependency")
 	}
 }
+
+// When a stage's LLM call fails AFTER block.start, the tool must resolve the
+// block so the canvas never hangs in "writing": it emits a stage-scoped error
+// event (and no block.done) for that stage.
+func TestStageToolErrorResolvesBlock(t *testing.T) {
+	reg := DefaultRegistry()
+	tool, _ := reg.Get("generateConcept") // no precondition → reaches stage.Run
+	var evs []model.ChatEvent
+	tc := &ToolCtx{
+		Plan:     &model.Plan{},
+		Provider: llm.NewMock(), // empty mock: no "concept" fixture → stage.Run errors
+		Emit:     func(e model.ChatEvent) { evs = append(evs, e) },
+	}
+	obs := tool.Run(context.Background(), tc, nil)
+	if obs.OK {
+		t.Fatal("expected the stage to fail with an empty mock")
+	}
+	var sawStart, sawErr, sawDone bool
+	for _, e := range evs {
+		switch {
+		case e.Type == model.ChatBlockStart && e.Stage == "concept":
+			sawStart = true
+		case e.Type == model.ChatErrorEvent && e.Stage == "concept":
+			sawErr = true
+		case e.Type == model.ChatBlockDone && e.Stage == "concept":
+			sawDone = true
+		}
+	}
+	if !sawStart {
+		t.Fatal("expected block.start for concept")
+	}
+	if !sawErr {
+		t.Fatal("expected a stage-scoped error event resolving the block")
+	}
+	if sawDone {
+		t.Fatal("must NOT emit block.done on failure")
+	}
+}

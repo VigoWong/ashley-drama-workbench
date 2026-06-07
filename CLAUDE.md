@@ -115,8 +115,8 @@ a feedback loop rewrites.**
   holds a truncated `Brief.Requirement` snippet used only as the history-list label). Server saves
   asynchronously after `/api/generate` streams out. Refines are NOT persisted (interactive drafts).
 - **Auth** (`internal/auth/auth.go`): `/api/login` returns a random in-memory token; a Bearer
-  middleware guards `/api/assist`, `/api/propose`, `/api/generate`, `/api/refine`, `/api/history`,
-  `/api/history/{id}` (GET + DELETE). `/api/health` is open. Default creds admin/admin
+  middleware guards `/api/assist`, `/api/propose`, `/api/generate`, `/api/refine`, `/api/chat`,
+  `/api/history`, `/api/history/{id}` (GET + DELETE). `/api/health` is open. Default creds admin/admin
   (`AUTH_USERNAME`/`AUTH_PASSWORD`).
 - **Two surfaces, one orchestrator**: `cmd/server` (HTTP+SSE: assist/propose/generate/refine/history)
   and `cmd/cli` (full `Run` only) both call `agent.New(provider, emit)`.
@@ -130,6 +130,9 @@ a feedback loop rewrites.**
 - `POST /api/generate` `Brief` (+ optional `concept`) → SSE (Bearer; with `concept` skips the concept
   stage and runs from bible; persisted)
 - `POST /api/refine` `{plan,fromStage,only,note}` → SSE (Bearer; rerun via `RunFrom`; NOT persisted)
+- `POST /api/chat` `{message,history?,plan?}` → SSE of `model.ChatEvent` (Bearer; guided-ReAct agent:
+  one user turn loops thought→tool→observation, emitting `thought.*/tool.*/message.*/block.*/turn.done`,
+  mutating a shared `Plan`; mock/no-key uses a scripted trace, real uses Gemini function-calling; NOT persisted)
 - `GET /api/history` / `GET /api/history/{id}` / `PUT /api/history/{id}` `{plan}` (存回历史:覆盖记录) / `DELETE /api/history/{id}` (Bearer; empty/404 without DB)
 - `GET /api/health` (open)
 

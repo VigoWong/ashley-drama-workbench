@@ -210,6 +210,9 @@ func (t stageTool) Run(ctx context.Context, tc *ToolCtx, args map[string]any) Ob
 	tc.Emit(model.ChatEvent{Type: model.ChatBlockStart, Stage: stage})
 	st := &PlanState{Plan: tc.Plan, Provider: tc.Provider, Note: argString(args, "note")}
 	if err := t.stage.Run(ctx, st); err != nil {
+		// Resolve the block we just started so the canvas doesn't get stuck in
+		// the "writing" state. A stage-scoped error event carries the scope.
+		tc.Emit(model.ChatEvent{Type: model.ChatErrorEvent, Stage: stage, Message: err.Error()})
 		return Observation{OK: false, Error: err.Error()}
 	}
 	payload := chatBlockPayload(tc.Plan, stage)
@@ -244,6 +247,8 @@ func (refineTool) Run(ctx context.Context, tc *ToolCtx, args map[string]any) Obs
 	tc.Emit(model.ChatEvent{Type: model.ChatBlockStart, Stage: stage})
 	o := New(tc.Provider, func(model.Event) {}) // reuse RunFrom; swallow legacy events
 	if _, err := o.RunFrom(ctx, tc.Plan, stage, true, argString(args, "note")); err != nil {
+		// Resolve the block so the canvas doesn't hang in "writing" on failure.
+		tc.Emit(model.ChatEvent{Type: model.ChatErrorEvent, Stage: stage, Message: err.Error()})
 		return Observation{OK: false, Error: err.Error()}
 	}
 	payload := chatBlockPayload(tc.Plan, stage)
@@ -310,8 +315,8 @@ func DefaultRegistry() *Registry {
 		},
 	})
 	r.Add(stageTool{
-		name: "renderVisuals", friendly: "生成概念图", desc: "尽力生成关键概念图(无图能力则跳过)。需先有英雄场景。",
-		stage: stages["visuals"], requires: func(p *model.Plan) string { return need(epsSet(p), "需先生成分集与英雄场景") },
+		name: "renderVisuals", friendly: "生成概念图", desc: "尽力生成关键概念图(无图能力则跳过)。需先有分集。",
+		stage: stages["visuals"], requires: func(p *model.Plan) string { return need(epsSet(p), "需先调用 generateEpisodes 生成分集") },
 	})
 
 	r.Add(refineTool{})
