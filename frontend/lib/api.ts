@@ -1,4 +1,4 @@
-import { Brief, BriefImage, Concept, ProposeResp, RefineReq, SSEvent } from "./types"
+import { Brief, BriefImage, ChatEvent, ChatReq, Concept, ProposeResp, RefineReq, SSEvent } from "./types"
 import { getToken } from "./auth"
 
 const API = process.env.NEXT_PUBLIC_API ?? "http://localhost:8080"
@@ -12,11 +12,11 @@ export class UnauthorizedError extends Error {
 }
 
 // streamSSE POSTs a JSON body and parses the `data:`-framed SSE response,
-// invoking onEvent per event. Shared by generate() and refine().
-async function streamSSE(
+// invoking onEvent per event. Shared by generate(), refine(), and chat().
+async function streamSSE<T = SSEvent>(
   path: string,
   body: unknown,
-  onEvent: (e: SSEvent) => void
+  onEvent: (e: T) => void
 ): Promise<void> {
   const token = getToken()
   const res = await fetch(`${API}${path}`, {
@@ -40,7 +40,7 @@ async function streamSSE(
     buf = chunks.pop() ?? ""
     for (const c of chunks) {
       const line = c.split("\n").find((l) => l.startsWith("data: "))
-      if (line) onEvent(JSON.parse(line.slice(6)) as SSEvent)
+      if (line) onEvent(JSON.parse(line.slice(6)) as T)
     }
   }
 }
@@ -101,4 +101,12 @@ export function generate(
 
 export function refine(req: RefineReq, onEvent: (e: SSEvent) => void): Promise<void> {
   return streamSSE("/api/refine", req, onEvent)
+}
+
+// chat drives the conversational ReAct agent. It POSTs one user message (plus the
+// prior text history and the in-progress plan) to /api/chat and streams ChatEvents
+// — thought/tool/message/block/turn — back via onEvent. One call == one agent turn
+// (which may loop through many tool calls server-side) and ends with a turn.done.
+export function chat(req: ChatReq, onEvent: (e: ChatEvent) => void): Promise<void> {
+  return streamSSE<ChatEvent>("/api/chat", req, onEvent)
 }
