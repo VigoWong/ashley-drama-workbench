@@ -13,3 +13,7 @@ verify-*.png
 
 # brainstorming visual companion
 .superpowers/
+
+# NAS 公网部署脚本与配置(含密钥/节点信息,不入库)
+/deploy.sh
+/deploy/
