@@ -76,8 +76,11 @@ func RunChat(
 			return history, nil
 		}
 
-		// Record the assistant's intent, then execute each tool call.
-		history = append(history, Message{Role: RoleAssistant, Text: turn.Message})
+		// Record the assistant's intent, then execute each tool call. Store the
+		// ToolCalls so the Gemini adapter can reconstruct functionCall parts in the
+		// multi-turn history (Gemini requires the model content preceding each
+		// functionResponse to contain the matching functionCall parts).
+		history = append(history, Message{Role: RoleAssistant, Text: turn.Message, ToolCalls: turn.ToolCalls})
 		for _, call := range turn.ToolCalls {
 			tool, ok := reg.Get(call.Name)
 			emit(model.ChatEvent{

@@ -14,13 +14,16 @@ const (
 
 // Message is one entry in the conversation history handed to the ChatLLM. For
 // RoleTool entries, ToolCallID/ToolName identify which call this observes and
-// ToolResult is the JSON-encoded Observation.
+// ToolResult is the JSON-encoded Observation. For RoleAssistant entries that
+// triggered tool calls, ToolCalls carries the calls so the Gemini adapter can
+// reconstruct the required functionCall parts in multi-turn history.
 type Message struct {
-	Role       Role   `json:"role"`
-	Text       string `json:"text,omitempty"`
-	ToolCallID string `json:"toolCallId,omitempty"`
-	ToolName   string `json:"toolName,omitempty"`
-	ToolResult string `json:"toolResult,omitempty"`
+	Role       Role       `json:"role"`
+	Text       string     `json:"text,omitempty"`
+	ToolCallID string     `json:"toolCallId,omitempty"`
+	ToolName   string     `json:"toolName,omitempty"`
+	ToolResult string     `json:"toolResult,omitempty"`
+	ToolCalls  []ToolCall `json:"toolCalls,omitempty"`
 }
 
 // ToolCall is a single tool invocation the model wants the engine to run.

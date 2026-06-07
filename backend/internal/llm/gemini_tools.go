@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // ToolSpec is a provider-agnostic tool declaration passed to GenerateWithTools.
@@ -20,14 +21,26 @@ type ToolCallOut struct {
 	Args map[string]any
 }
 
+// ToolCallRef carries the name and args of a single function call that the
+// model previously requested. It is stored on model-role ToolMessages so that
+// GenerateWithTools can reconstruct the functionCall parts Gemini requires in
+// the "model" content that precedes each functionResponse turn.
+type ToolCallRef struct {
+	Name string
+	Args map[string]any
+}
+
 // ToolMessage is one conversation entry for the tool-calling API. Role is
 // "user" | "model" | "tool". For tool messages, Name + Result (JSON string)
 // carry the observation.
+// ToolCalls is populated only for model-role messages that previously triggered
+// function calls; it drives reconstruction of functionCall parts in the history.
 type ToolMessage struct {
-	Role   string
-	Text   string
-	Name   string
-	Result string
+	Role      string
+	Text      string
+	Name      string
+	Result    string
+	ToolCalls []ToolCallRef // non-nil only for role=="model" that had function calls
 }
 
 // ToolReply is the model's response: either Text (final) or ToolCalls (act).
@@ -83,6 +96,15 @@ func (g *Gemini) GenerateWithTools(ctx context.Context, system string, history [
 		Parts []any  `json:"parts"`
 	}
 
+	// fnCallPart is the wire shape for a functionCall part in a "model" content.
+	type fnCallInner struct {
+		Name string         `json:"name"`
+		Args map[string]any `json:"args"`
+	}
+	type fnCallPart struct {
+		FunctionCall fnCallInner `json:"functionCall"`
+	}
+
 	contents := make([]rawContent, 0, len(history))
 	for _, m := range history {
 		switch m.Role {
@@ -98,9 +120,37 @@ func (g *Gemini) GenerateWithTools(ctx context.Context, system string, history [
 			}}
 			contents = append(contents, rawContent{Role: "user", Parts: []any{part}})
 		case "model":
-			contents = append(contents, rawContent{Role: "model", Parts: []any{textPart{Text: m.Text}}})
+			// Reconstruct the full "model" content. If this turn had function calls
+			// (stored in ToolCalls), we must include the functionCall parts so Gemini
+			// can correlate them with the subsequent functionResponse parts. Omitting
+			// them causes a 400 on the second+ tool iteration.
+			parts := make([]any, 0, len(m.ToolCalls)+1)
+			if m.Text != "" {
+				parts = append(parts, textPart{Text: m.Text})
+			}
+			for _, tc := range m.ToolCalls {
+				parts = append(parts, fnCallPart{FunctionCall: fnCallInner{Name: tc.Name, Args: tc.Args}})
+			}
+			if len(parts) == 0 {
+				// Safety fallback: Gemini requires at least one part.
+				parts = append(parts, textPart{Text: ""})
+			}
+			contents = append(contents, rawContent{Role: "model", Parts: parts})
 		default: // "user"
 			contents = append(contents, rawContent{Role: "user", Parts: []any{textPart{Text: m.Text}}})
+		}
+	}
+
+	// Fix 1: disable thinking for 2.5 models during tool-calling turns, matching
+	// the same guard used in once() for plain GenerateJSON calls.
+	var generationConfig *struct {
+		ThinkingConfig *thinkingConfig `json:"thinkingConfig,omitempty"`
+	}
+	if strings.Contains(g.model, "2.5") {
+		generationConfig = &struct {
+			ThinkingConfig *thinkingConfig `json:"thinkingConfig,omitempty"`
+		}{
+			ThinkingConfig: &thinkingConfig{ThinkingBudget: 0},
 		}
 	}
 
@@ -110,6 +160,9 @@ func (g *Gemini) GenerateWithTools(ctx context.Context, system string, history [
 		},
 		"contents": contents,
 		"tools":    []map[string]any{{"functionDeclarations": decls}},
+	}
+	if generationConfig != nil {
+		reqBody["generationConfig"] = generationConfig
 	}
 
 	encoded, err := json.Marshal(reqBody)

@@ -37,7 +37,17 @@ func (g *geminiChatLLM) NextTurn(ctx context.Context, system string, history []M
 		case RoleTool:
 			msgs[i] = llm.ToolMessage{Role: "tool", Name: m.ToolName, Result: m.ToolResult}
 		case RoleAssistant:
-			msgs[i] = llm.ToolMessage{Role: "model", Text: m.Text}
+			// Carry the function calls so GenerateWithTools can emit functionCall
+			// parts in the "model" history content, as required by Gemini's
+			// multi-turn function-calling protocol.
+			var refs []llm.ToolCallRef
+			if len(m.ToolCalls) > 0 {
+				refs = make([]llm.ToolCallRef, len(m.ToolCalls))
+				for j, tc := range m.ToolCalls {
+					refs[j] = llm.ToolCallRef{Name: tc.Name, Args: tc.Args}
+				}
+			}
+			msgs[i] = llm.ToolMessage{Role: "model", Text: m.Text, ToolCalls: refs}
 		default: // RoleUser
 			msgs[i] = llm.ToolMessage{Role: "user", Text: m.Text}
 		}
